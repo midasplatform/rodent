@@ -1,0 +1,25 @@
+#ends the script in case of errors
+ExitOnError(1)
+
+Include(unu.config.bms)
+
+#Foreach(input_loop ${cfg_input_file})
+#application setup
+
+  SetApp(apunu @Appunu)
+
+  SetAppOption(apunu.CommandLine1 1)
+  SetAppOption(apunu.CommandLine2 1)
+  SetAppOption(apunu.CommandLine2.suf2 ${cfg_aValue})
+  SetAppOption(apunu.CommandLine3 1)
+  SetAppOption(apunu.CommandLine3.suf3 ${cfg_pValue})
+  SetAppOption(apunu.Input 1)
+  SetAppOption(apunu.Input.image ${cfg_inputImagePath})
+  SetAppOption(apunu.Output 1)
+  Set(outputImage task_${cfg_taskId}_out.nrrd)
+  SetAppOption(apunu.Output.file ${outputImage})
+
+  CondorPostScript(apunu ${cfg_exe} ${cfg_condorpostscript} ${cfg_output_directory} ${cfg_taskId} ${outputImage} ${cfg_outputFolderId} unu)
+  Run(output ${apunu})
+
+#Endforeach(input_loop)
