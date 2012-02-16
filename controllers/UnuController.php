@@ -90,7 +90,7 @@ class Rodent_UnuController extends Rodent_AppController
   $itemIds = array($inputItemId);
   $this->exportItemsToWorkDataDir($userDao, $taskDao, $itemIds);
 
-  $executeComponent = $componentLoader->loadComponent('Execute', 'batchmake');
+  $executeComponent = $componentLoader->loadComponent('Execute', 'rodent');
   $executeComponent->generatePythonConfigParams($taskDao, $userDao);
         
   $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/unu_condor_postscript.py';
