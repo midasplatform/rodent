@@ -25,6 +25,7 @@ class Rodent_AsController extends Rodent_AppController
 //  public $_moduleComponents = array('Executable', 'Job');
 //  public $_moduleModels = array('Job');
 
+  protected $pipelinePrefix = "rodent_atlassegmentation_";
   
   
   
@@ -60,20 +61,34 @@ class Rodent_AsController extends Rodent_AppController
       }
     $this->requireAdminPrivileges();
     
-    $pipelinePrefix = "rodent_atlassegmentation_";
     
-    $folderSelections = array("Project Data" => "projectdata",
-        "Atlas" => "atlas",
-        "Population Atlas" => "populationatlas",
-        "Brain Stripping and Parcellation Map" => "brainstripping",
-        "Temporary Files" => "temporaryfiles",
-        "Output Directory" => "outputdirectory");
+    $folderSelections = array("projectdata" => "Project Data",
+//        "atlas" => "Atlas" ,
+//        "populationatlas" => "Population Atlas",
+        "brainstripping" => "Brain Stripping and Parcellation Map",
+        "temporaryfiles" => "Temporary Files",
+        "outputdirectory" => "Output Directory");
+ 
+    $itemSelections = array("populationatlas" => "Population Atlas",
+        "populationatlasmask" => "Population Atlas Mask",
+        "template" => "Template",
+        "parcellationfilemask" => "Parcellation File Mask",
+        "temporaryfiles" => "Temporary Files",
+        "imagegrid" => "Image Grid");
     
+    $parameters = array("diffeomorphic" => array("type" => "boolean", "label" => "diffeomorphic"),
+        "smooth" => array("type" => "boolean", "label" => "smooth"),
+        "scaled" => array("type" => "boolean", "label" => "scaled"),
+        "similaritymetrics" => array("type" => "select", "label" => "similaritymetrics", "options" => array("MI","MSQ","CI", "PR", "CC", "PSE")),
+        "antsweight" => array("type" => "integer", "label" => "antsweight"),
+        "antsbin" => array("type" => "integer", "label" => "antsbin"),
+        "defiterations" => array("type" => "integer", "label" => "defiterations"),
+        "imagedimension" => array("type" => "select", "label" => "Image Dimension", "options" => array("2","3")),
+        "step" => array("type" => "integer", "label" => "step"));
     
-   
-    
-    
-    
+    $inputs = array("prefix" => $this->pipelinePrefix, "folders" => $folderSelections, "items" => $itemSelections, "parameters" => $parameters);
+    $this->view->inputs = $inputs;
+    $this->view->json['inputs'] = $inputs;
     
     
     
@@ -84,33 +99,80 @@ class Rodent_AsController extends Rodent_AppController
    * start a unu job, via an ajax call.
    */
   public function startjobAction()
-  {
-  $this->disableLayout();
-  $this->disableView();
+    {
+    $this->disableLayout();
+    $this->disableView();
+  
+    $inputParams = $this->_getAllParams();
+    $configInputs = array();
+    $substrInd = strlen($this->pipelinePrefix);
+    foreach($inputParams as $inputParam => $value)
+      {
+      if(strpos($inputParam, $this->pipelinePrefix) === 0)
+        {
+        $configInputs[substr($inputParam, $substrInd)] = $value;
+        }
+      }
+  
+    // create a task
+    $userDao = $this->userSession->Dao;
+    $componentLoader = new MIDAS_ComponentLoader();
+    $kwbatchmakeComponent = $componentLoader->loadComponent('KWBatchmake', 'batchmake');
+    $taskDao = $kwbatchmakeComponent->createTask($userDao);
+    
+    // now that we have created a task, create a new folder for this task under
+    // the outputFolder
+    $outputFolderId = $configInputs["outputdirectory"];
+    $modelLoad = new MIDAS_ModelLoader();
+    $folderModel = $modelLoad->loadModel('Folder');
+    $outputFolderDao = $folderModel->createFolder('AS task ' . $taskDao->getKey() . ' Output', '', $outputFolderId);
+    // now set the outputFolderId to be the newly created one
+    $outputFolderId = $outputFolderDao->getKey();
+    
+    // generate and export midas client communication params
+    $executeComponent = $componentLoader->loadComponent('Execute', 'rodent');
+    $executeComponent->generatePythonConfigParams($taskDao, $userDao);      
+
+    
+    $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/as_condor_postscript.py';
+    $configScriptStem = "as";
+
+    $executeComponent->generateBatchmakeConfig($taskDao, $configInputs, $condorPostScriptPath, $configScriptStem);
+  
+/*    $bmScript = "unu.bms";
+    $kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
+    $kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
+    $kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
+    $dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
+    $kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
+*/
+    
+    
+    
+    
+    // todo export the input
+    // can either do it here or pass down enough info to do it in a python script
+    
+    
+     // outputdirectory
+      
+// $rest = substr("abcdef", -3, 1);  
+    //echo JsonComponent::encode($taskDao);
+        //$this->view->json['inputParams'] = $inputParams;
+  
+/*  
   $inputItemId = $this->_getParam("inputItemId");
   $outputFolderId = $this->_getParam("outputFolderId");
   $aValue = $this->_getParam("aValue");
   $pValue = $this->_getParam("pValue");
 
-  $userDao = $this->userSession->Dao;
-  $componentLoader = new MIDAS_ComponentLoader();
-  $kwbatchmakeComponent = $componentLoader->loadComponent('KWBatchmake', 'batchmake');
-  $taskDao = $kwbatchmakeComponent->createTask($userDao);
 
-  // now that we have created a task, create a new folder for this task under
-  // the outputFolder
-  $modelLoad = new MIDAS_ModelLoader();
-  $folderModel = $modelLoad->loadModel('Folder');
-  $outputFolderDao = $folderModel->createFolder('UNU task ' . $taskDao->getKey() . ' Output', '', $outputFolderId);
-  // now set the outputFolderId to be the newly created one
-  $outputFolderId = $outputFolderDao->getKey();
   
   // export the input item
   $itemIds = array($inputItemId);
   $this->exportItemsToWorkDataDir($userDao, $taskDao, $itemIds);
 
-  $executeComponent = $componentLoader->loadComponent('Execute', 'batchmake');
-  $executeComponent->generatePythonConfigParams($taskDao, $userDao);
+
         
   $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/unu_condor_postscript.py';
   $configScriptStem = "unu";
@@ -146,142 +208,11 @@ class Rodent_AsController extends Rodent_AppController
   $dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
   $kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
 
-  
-  $this->view->json['inputItemId'] = $inputItemId;
+  */
   }
     
   
   
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-    
-  /** return the executable form (should be an ajax call) */
-  function getinitexecutableAction()
-    {
-    $this->disableLayout();
-    $itemId = $this->_getParam("itemId");
-    $scheduled = $this->_getParam("scheduled");
-    if(isset($scheduled) && $scheduled == 1)
-      {
-      $scheduled = true;
-      }
-    else
-      {
-      $scheduled = false;
-      }
-
-    $this->view->scheduled = $scheduled;
-    if(!isset($itemId) || !is_numeric($itemId))
-      {
-      throw new Zend_Exception("itemId  should be a number");
-      }
-
-    $itemDao = $this->Item->load($itemId);
-    if($itemDao === false)
-      {
-      throw new Zend_Exception("This item doesn't exist.");
-      }
-    if(!$this->Item->policyCheck($itemDao, $this->userSession->Dao, MIDAS_POLICY_WRITE))
-      {
-      throw new Zend_Exception("Problem policies.");
-      }
-
-    $metaFile = $this->ModuleComponent->Executable->getMetaIoFile($itemDao);
-    if($metaFile == false)
-      {
-      throw new Zend_Exception("Unable to find meta information");
-      }
-
-    $metaContent = new SimpleXMLElement(file_get_contents($metaFile->getFullPath()));
-    $this->view->metaContent = $metaContent;
-
-    $this->view->itemDao = $itemDao;
-    $this->view->json['item'] = $itemDao->toArray();
-    }
-
-  /** view a job */
-  function viewAction()
-    {
-    $this->view->header = $this->t("Job");
-    $jobId = $this->_getParam("jobId");
-    $jobDao = $this->Remoteprocessing_Job->load($jobId);
-    if(!$jobDao)
-      {
-      throw new Zend_Exception("Unable to find job.");
-      }
-
-    $this->view->job = $jobDao;
-    $this->view->header = $this->t("Job: ".$jobDao->getName());
-    $items = $jobDao->getItems();
-    $inputs = array();
-    $outputs = array();
-    $parametersList = array();
-    $executable = false;
-    $log = false;
-
-    foreach($items as $key => $item)
-      {
-      if(!$this->Item->policyCheck($item, $this->userSession->Dao))
-        {
-        unset($items[$key]);
-        continue;
-        }
-      if($item->type == MIDAS_REMOTEPROCESSING_RELATION_TYPE_EXECUTABLE)
-        {
-        $executable = $item;
-        }
-      elseif($item->type == MIDAS_REMOTEPROCESSING_RELATION_TYPE_INPUT)
-        {
-        $inputs[$item->getName()] = $item;
-        }
-      elseif($item->type == MIDAS_REMOTEPROCESSING_RELATION_TYPE_OUPUT)
-        {
-        $reviesion = $this->Item->getLastRevision($item);
-        $metadata = $this->ItemRevision->getMetadata($reviesion);
-        $item->metadata = $metadata;
-
-        foreach($metadata as $m)
-          {
-          if($m->getElement() == 'parameter' && !in_array($m->getQualifier(), $parametersList))
-            {
-            $parametersList[$m->getQualifier()] = $m->getQualifier();
-            }
-          $item->metadataParameters[$m->getQualifier()] = $m->getValue();
-          }
-
-        $outputs[] = $item;
-        }
-      elseif($item->type == MIDAS_REMOTEPROCESSING_RELATION_TYPE_RESULTS)
-        {
-        $reviesion = $this->Item->getLastRevision($item);
-        $metadata = $this->ItemRevision->getMetadata($reviesion);
-        $item->metadata = $metadata;
-
-        $bitstreams = $reviesion->getBitstreams();
-        if(count($bitstreams) == 1)
-          {
-          $log = file_get_contents($bitstreams[0]->getFullPath());
-          }
-        }
-      }
-
-    $this->view->outputs = $outputs;
-    $this->view->log = $log;
-    $this->view->results =  $this->ModuleComponent->Job->convertXmlREsults($log);
-    $this->view->inputs = $inputs;
-    $this->view->executable = $executable;
-    $this->view->parameters = $parametersList;
-    }
-
 
 
 

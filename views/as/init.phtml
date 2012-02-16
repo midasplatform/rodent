@@ -11,7 +11,7 @@ PURPOSE.  See the above copyright notices for more information.
 =========================================================================*/
 $this->headScript()->appendFile($this->coreWebroot . '/public/js/jquery/jquery.form.js');
 $this->headScript()->appendFile($this->coreWebroot . '/public/js/jquery/jquery.timepicker-addon.js');
-$this->headScript()->appendFile($this->moduleWebroot . '/public/js/unu/unu.init.js');
+$this->headScript()->appendFile($this->moduleWebroot . '/public/js/as/as.init.js');
 $this->headScript()->appendFile($this->coreWebroot . '/public/js/jquery/jquery.smartWizard-2.0.js');
 ?>
 <link type="text/css" rel="stylesheet" href="<?php echo $this->moduleWebroot?>/public/css/unu/unu.init.css" />
@@ -21,9 +21,21 @@ $this->headScript()->appendFile($this->coreWebroot . '/public/js/jquery/jquery.s
 
 <?php
 $processSteps = array();
-$processSteps[1] = array('title'=>'Input', 'subtitle'=>'select input images');
-$processSteps[2] = array('title'=>'Output', 'subtitle'=>'select output folder');
+$processSteps[1] = array('title'=>'Folders', 'subtitle'=>'select folders');
+$processSteps[2] = array('title'=>'Items', 'subtitle'=>'select items');
 $processSteps[3] = array('title'=>'Parameters', 'subtitle'=>'specify parameter values');
+
+//var_dump($this->inputs['folders']);
+//exit();
+$folders = $this->inputs['folders'];
+$items = $this->inputs['items'];
+$parameters = $this->inputs['parameters'];
+$prefix = $this->inputs['prefix'];
+
+//    $inputs = array("folder" => $folderSelections, "item" => $itemSelections, "value" => $options);
+//    $this->view->inputs = $inputs;
+
+
 ?>
 
 <div id="wizard" class="swMain">
@@ -43,59 +55,86 @@ $processSteps[3] = array('title'=>'Parameters', 'subtitle'=>'specify parameter v
 ?>
   </ul>
 
-    
   <div id="step-1">
-      <h2 class="StepTitle">Input</h2>
-      <br/><b>Please specify the Midas item containing an image to use as input.</b>
+      <h2 class="StepTitle">Folders</h2>
+      <br/><b>Please select a Midas folder for each input.</b>
       <br/>
       <br/>
-
-      <?php
-        echo '<div id="midas_rodent_unu_browseImageFile" class="genericBigButton ">';
-          echo "<a  ><img  alt='' src='{$this->coreWebroot}/public/images/FileTree/file.png'/>";
-          echo 'Browse';
-          echo "</a>";
-        echo '</div>';
-        ?>
-      <br/>
-      <b>Selected Item:</b> <span id="midas_rodent_unu_selectedImage"><?php echo (isset($this->itemDao))? $this->itemDao->getName():'None'?></span>
-      <input type="hidden" id="midas_rodent_unu_selectedImageId" value="<?php echo (isset($this->itemDao))? $this->itemDao->getKey():''?>"/>
-
+      
+      
+      <?php 
+       foreach($folders as $folderId => $label)
+         {
+         echo '<div>';
+         echo '<b>'.$label.':</b> <span id="'. $prefix . $folderId . "_name" .'"></span>';
+         echo '<div id="'. $prefix . $folderId . "_button" . '" class="genericBigButton ">';
+         echo "<a  ><img  alt='' src='{$this->coreWebroot}/public/images/FileTree/directory.png'/>";
+         echo 'Browse';
+         echo "</a>";
+         echo '</div>';  
+         echo '<input type="hidden" id="'. $prefix . $folderId .'" class="pipelineparameter" value=""/>';
+         echo '</div><br/>';
+         }
+       ?>
   </div>
 
   <div id="step-2">
-      <h2 class="StepTitle">Output</h2>
-      <br/><b>Please specify the Midas folder where the output will be uploaded.</b>
+      <h2 class="StepTitle">Items</h2>
+      <br/><b>Please select a Midas item for each input.</b>
       <br/>
       <br/>
-
-      <?php
-        echo '<div id="midas_rodent_unu_browseOutputFolder" class="genericBigButton ">';
-          echo "<a  ><img  alt='' src='{$this->coreWebroot}/public/images/FileTree/directory.png'/>";
-          echo 'Browse';
-          echo "</a>";
-        echo '</div>';
-        ?>
-
-      <br/>
-      <b>Selected Folder:</b> <span id="midas_rodent_unu_selectedFolder"></span>
-      <input type="hidden" id="midas_rodent_unu_selectedFolderId" value=""/>
-
+      
+      
+      <?php 
+       foreach($items as $itemId => $label)
+         {
+         echo '<div>';
+         echo '<b>'.$label.':</b> <span id="'. $prefix . $itemId . "_name" .'"></span>';
+         echo '<div id="'. $prefix . $itemId . "_button" . '" class="genericBigButton ">';
+         echo "<a  ><img  alt='' src='{$this->coreWebroot}/public/images/FileTree/directory.png'/>";
+         echo 'Browse';
+         echo "</a>";
+         echo '</div>';  
+         echo '<input type="hidden" id="'. $prefix . $itemId .'" class="pipelineparameter" value=""/>';
+         echo '</div><br/>';
+         }
+       ?>
   </div>
     
+    
+
     
     
     
   <div id="step-3">
       <h2 class="StepTitle">Parameters</h2>
       <br/>
-      <b>Please set the value of parameters A and P.</b><br/><br/>
+      <b>Please set the parameter values.</b><br/><br/>
       <br/>
       <br/>
-      
-      <strong>A</strong><input type="text" id="midas_rodent_unu_aValue" name="aValue"/>
-      <br/>
-      <strong>P</strong><input type="text" id="midas_rodent_unu_pValue" name="pValue"/>
+    
+       <?php 
+         foreach($parameters as $parameterId => $parameterDef)
+           {
+           if($parameterDef['type'] === 'boolean')
+             {
+             echo '<input type="checkbox" class="pipelineparameter" id="'. $prefix . $parameterId .'" >'.$parameterDef['label'] . '<br/>';
+             }
+           elseif($parameterDef['type'] === 'integer')
+             {
+             echo '<input type="text" class="pipelineparameter" id="'. $prefix . $parameterId .'" >'.$parameterDef['label'] . '<br/>';
+             }
+           elseif($parameterDef['type'] === 'select')
+             {
+             echo '<select class="pipelineparameter" id="'. $prefix . $parameterId .'">';
+             foreach($parameterDef['options'] as $option)
+               {
+               echo '<option value="'.$option.'">'.$option.'</option>';
+               }
+             echo "</select>".$parameterDef['label']."<br/>";
+             }
+           }
+        ?>
       
   </div>
 </div>
