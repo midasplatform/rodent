@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+        <executable>
+                <Name>SegPostProcessCLP</Name>
+                <Version>1.0</Version>
+                <Path>/midas/midas3base/batchmake/SegPostProcessCLP</Path>
+                <Parameters>
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>label</Name>
+                                <Value></Value>
+                                <External>1</External>
+                                <Optional>0</Optional>
+                       </Parameter>
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>mask</Name>
+                                <Value></Value>
+                                <External>1</External>
+                                <Optional>0</Optional>
+                       </Parameter>
+                </Parameters>
+        </executable>

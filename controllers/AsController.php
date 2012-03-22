@@ -156,7 +156,12 @@ class Rodent_AsController extends Rodent_AppController
     $taskDao = $kwbatchmakeComponent->createTask($userDao);
     
     // export any data needed by the pipeline from midas
-    $singleBitstreamItemParams = array("template"=>"template");
+    $singleBitstreamItemParams = array("template"=>"template",
+                                       "imagegrid" => "imagegrid",
+                                       "parcellationfilemask" => "parcellationfilemask",
+                                       "populationatlasmask" => "populationatlasmask",
+                                       "imagegrid" => "imagegrid",
+                                       "populationatlas" => "populationsatlas");
     $singleBitstreamItemIds = array();
 
     // TODO need to keep cleaning up these exports, just working through params one at a time

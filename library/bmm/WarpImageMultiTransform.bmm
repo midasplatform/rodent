@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+        <executable>
+                <Name>WarpImageMultiTransform</Name>
+                <Version>1.0</Version>
+                <Path>/midas/midas3base/batchmake/bin/WarpImageMultiTransform</Path>
+                <Parameters>
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>dimension</Name>
+                                <Value></Value>
+                                <External>0</External>
+                                <Optional>0</Optional>
+                       </Parameter>
+
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>input</Name>
+                                <Value></Value>
+                                <External>0</External>
+                                <Optional>0</Optional>
+                       </Parameter>
+
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>output</Name>
+                                <Value></Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                       </Parameter>
+
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>warpFile</Name>
+                                <Value></Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                       </Parameter>
+
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>affineFile</Name>
+                                <Value></Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                       </Parameter>
+
+                       <Parameter>
+                                <Type>1</Type>
+                                <Name>reference</Name>
+                                <Value>-R</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>reference</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                       </Parameter>
+
+                       <Parameter>
+                                <Type>1</Type>
+                                <Name>useNN</Name>
+                                <Value>--use-NN</Value>
+                                <External>0</External>
+                                <Optional>0</Optional>
+                       </Parameter>
+                    </Parameters>
+        </executable>
