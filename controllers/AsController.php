@@ -105,35 +105,25 @@ class Rodent_AsController extends Rodent_AppController
     $this->requireAdminPrivileges();
     
     
-    $folderSelections = array("projectdata" => "Project Data",
-//        "atlas" => "Atlas" ,
-//        "populationatlas" => "Population Atlas",
-        "brainstripping" => "Brain Stripping and Parcellation Map",
-        "temporaryfiles" => "Temporary Files",
-        "outputdirectory" => "Output Directory");
+    $folderSelections = array("outputdirectory" => "Output Directory");
  
     $itemSelections = array("populationatlas" => "Population Atlas",
         "populationatlasmask" => "Population Atlas Mask",
         "template" => "Template",
-        "parcellationfilemask" => "Parcellation File Mask",
-        "temporaryfiles" => "Temporary Files",
+        "templatemask" => "Template Mask",
+        "parcellation" => "Parcellation",
         "imagegrid" => "Image Grid");
     
     $parameters = array("diffeomorphic" => array("type" => "boolean", "label" => "diffeomorphic"),
         "smooth" => array("type" => "boolean", "label" => "smooth"),
         "scaled" => array("type" => "boolean", "label" => "scaled"),
         "similaritymetrics" => array("type" => "select", "label" => "similaritymetrics", "options" => array("MI","MSQ","CI", "PR", "CC", "PSE")),
-        "antsweight" => array("type" => "integer", "label" => "antsweight"),
-        "antsbin" => array("type" => "integer", "label" => "antsbin"),
-        "defiterations" => array("type" => "integer", "label" => "defiterations"),
         "imagedimension" => array("type" => "select", "label" => "Image Dimension", "options" => array("2","3")),
         "step" => array("type" => "integer", "label" => "step"));
     
     $inputs = array("prefix" => $this->pipelinePrefix, "folders" => $folderSelections, "items" => $itemSelections, "parameters" => $parameters);
     $this->view->inputs = $inputs;
     $this->view->json['inputs'] = $inputs;
-    
-    
     
     
     }
@@ -146,9 +136,6 @@ class Rodent_AsController extends Rodent_AppController
     $this->disableLayout();
     $this->disableView();
   
-    
-    
-  
     // create a task
     $userDao = $this->userSession->Dao;
     $componentLoader = new MIDAS_ComponentLoader();
@@ -156,12 +143,13 @@ class Rodent_AsController extends Rodent_AppController
     $taskDao = $kwbatchmakeComponent->createTask($userDao);
     
     // export any data needed by the pipeline from midas
-    $singleBitstreamItemParams = array("template"=>"template",
-                                       "imagegrid" => "imagegrid",
-                                       "parcellationfilemask" => "parcellationfilemask",
+    $singleBitstreamItemParams = array("populationatlas" => "populationsatlas",
                                        "populationatlasmask" => "populationatlasmask",
-                                       "imagegrid" => "imagegrid",
-                                       "populationatlas" => "populationsatlas");
+                                       "template"=>"template",
+                                       "templatemask"=>"templatemask",
+                                       "parcellation" => "parcellation",
+                                       "imagegrid" => "imagegrid");
+    
     $singleBitstreamItemIds = array();
 
     // TODO need to keep cleaning up these exports, just working through params one at a time
