@@ -1,31 +1,31 @@
 <?php
 /*=========================================================================
- MIDAS Server
- Copyright (c) Kitware SAS. 26 rue Louis Guérin. 69100 Villeurbanne, FRANCE
- All rights reserved.
- More information http://www.kitware.com
+MIDAS Server
+Copyright (c) Kitware SAS. 26 rue Louis Guérin. 69100 Villeurbanne, FRANCE
+All rights reserved.
+More information http://www.kitware.com
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-         http://www.apache.org/licenses/LICENSE-2.0.txt
+http://www.apache.org/licenses/LICENSE-2.0.txt
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 =========================================================================*/
 /** as controller*/
-class Rodent_AsController extends Rodent_AppController
+class Rodent_RegController extends Rodent_AppController
 {
   public $_models = array('Item', 'Bitstream', 'ItemRevision', 'Assetstore', 'Folder');
   public $_components = array('Export');
-//  public $_moduleComponents = array('Executable', 'Job');
-//  public $_moduleModels = array('Job');
+// public $_moduleComponents = array('Executable', 'Job');
+// public $_moduleModels = array('Job');
 
-  protected $pipelinePrefix = "rodent_atlassegmentation_";
+  protected $pipelinePrefix = "rodent_registration_";
   
   
   
@@ -96,7 +96,7 @@ class Rodent_AsController extends Rodent_AppController
   /** init a job*/
   function initAction()
     {
-    $this->view->header = "Atlas Segmentation Pipeline Wizard";
+    $this->view->header = "Registration Pipeline Wizard";
     if(!$this->logged)
       {
       $this->haveToBeLogged();
@@ -105,18 +105,26 @@ class Rodent_AsController extends Rodent_AppController
     $this->requireAdminPrivileges();
     
     
-    $folderSelections = array("outputdirectory" => "Output Directory");
+    $folderSelections = array("outputdirectory" => "Output Directory",
+        "casesdirectory" => "Cases Directory");
+        //"externalatlasandprobmapdirectory" => "External atlas and probability map directory"
  
-    $itemSelections = array("populationaverage" => "Population Average",
-        "populationaaveragemask" => "Population Average Mask",
-        "template" => "Template",
-        "templatemask" => "Template Mask",
-        "segmentation" => "Segmentation",
-        "imagegrid" => "Image Grid");
+    $itemSelections = array("brainstripping" => "Brain stripping (e.g. ?)",
+        "segmentation" => "Segmentation file",
+	"template" => "Template (e.g. template.mha)");
     
-    $parameters = array("diffeomorphic" => array("type" => "boolean", "label" => "Use diffeomorphic transformation?"),
-        "smooth" => array("type" => "boolean", "label" => "Use smooth option?"),
-        "scaled" => array("type" => "boolean", "label" => "Scaled image?"));
+    $parameters = array(
+        "inputsuffix" => array("type" => "text", "label" => "Input images suffix"),
+        "additionalimagessuffix" => array("type" => "text", "label" => "Additional images suffix"),
+        "additionalimagesnnsuffix" => array("type" => "text", "label" => "NN additional images suffix"),
+        "transformsuffix" => array("type" => "text", "label" => "Transform suffix"),
+        "initialtransformsuffix" => array("type" => "text", "label" => "Initital transform suffix"),
+	"bias" => array("type" => "boolean", "label" => "Bias correction?"),
+        "scale" => array("type" => "boolean", "label" => "Scaled image?"),
+        "skullstrip" => array("type" => "boolean", "label" => "Skullstrip needed?"),
+        "inputtype" => array("type" => "select", "label" => "Input type", "options" => array("DWI","DTI","scalar")),
+        "orientation" => array("type" => "text", "label" => "Orientation (e.g. LPS)")); 
+    
     
     $inputs = array("prefix" => $this->pipelinePrefix, "folders" => $folderSelections, "items" => $itemSelections, "parameters" => $parameters);
     $this->view->inputs = $inputs;
@@ -125,9 +133,9 @@ class Rodent_AsController extends Rodent_AppController
     
     }
 
-  /** 
-   * start a unu job, via an ajax call.
-   */
+  /**
+* start a unu job, via an ajax call.
+*/
   public function startjobAction()
     {
     $this->disableLayout();
@@ -140,12 +148,9 @@ class Rodent_AsController extends Rodent_AppController
     $taskDao = $kwbatchmakeComponent->createTask($userDao);
     
     // export any data needed by the pipeline from midas
-    $singleBitstreamItemParams = array("populationaverage" => "populationaverage",
-                                       "populationaveragemask" => "populationaveragemask",
-                                       "template"=>"template",
-                                       "templatemask"=>"templatemask",
-                                       "segmentation" => "segmentation",
-                                       "imagegrid" => "imagegrid");
+    $singleBitstreamItemParams = array("brainstripping" => "Brain stripping",
+        "segmentation" => "Segmentation",
+	"template" => "template");
     
     $singleBitstreamItemIds = array();
 
@@ -166,7 +171,7 @@ class Rodent_AsController extends Rodent_AppController
         $paramName = substr($inputParam, $substrInd);
         if(array_key_exists($paramName, $singleBitstreamItemParams))
           {
-          $singleBitstreamItemIds[$paramName] = $value;  
+          $singleBitstreamItemIds[$paramName] = $value;
           }
         }
       }
@@ -174,9 +179,9 @@ class Rodent_AsController extends Rodent_AppController
     $configParamsToBitstreamPaths = $this->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $singleBitstreamItemIds);
 
     // replace any exported item config params with their path values
-    foreach($configParamsToBitstreamPaths as $configInput => $bitstreamPath) 
+    foreach($configParamsToBitstreamPaths as $configInput => $bitstreamPath)
       {
-      $configInputs[$configInput] = $bitstreamPath;  
+      $configInputs[$configInput] = $bitstreamPath;
       }
     
     
@@ -185,24 +190,22 @@ class Rodent_AsController extends Rodent_AppController
     $outputFolderId = $configInputs["outputdirectory"];
     $modelLoad = new MIDAS_ModelLoader();
     $folderModel = $modelLoad->loadModel('Folder');
-    $outputFolderDao = $folderModel->createFolder('AS task ' . $taskDao->getKey() . ' Output', '', $outputFolderId);
+    $outputFolderDao = $folderModel->createFolder('Reg task ' . $taskDao->getKey() . ' Output', '', $outputFolderId);
     // now set the outputFolderId to be the newly created one
     $outputFolderId = $outputFolderDao->getKey();
-    // set the newly created child folder id   
-    $configInputs['outputdirectory'] = $outputFolderId;
     
     // generate and export midas client communication params
     $executeComponent = $componentLoader->loadComponent('Execute', 'rodent');
-    $executeComponent->generatePythonConfigParams($taskDao, $userDao);      
+    $executeComponent->generatePythonConfigParams($taskDao, $userDao);
 
     
-    $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/py/as_condor_postscript.py';
-    $configScriptStem = "as";
+    $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/reg_condor_postscript.py';
+    $configScriptStem = "reg";
 
     $executeComponent->generateBatchmakeConfig($taskDao, $configInputs, $condorPostScriptPath, $configScriptStem);
   
     // export the batchmake scripts
-    $bmScript = "as.pipeline.bms";
+    $bmScript = "reg.pipeline.bms";
     $kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
     $kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
 
@@ -212,14 +215,13 @@ class Rodent_AsController extends Rodent_AppController
     $kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
     
     
-
     
-/*    $bmScript = "unu.bms";
-    $kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
-    $kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
-    $kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
-    $dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
-    $kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
+/* $bmScript = "unu.bms";
+$kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
+$kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
+$kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
+$dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
+$kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
 */
     
     
@@ -231,59 +233,54 @@ class Rodent_AsController extends Rodent_AppController
     
      // outputdirectory
       
-// $rest = substr("abcdef", -3, 1);  
+// $rest = substr("abcdef", -3, 1);
     //echo JsonComponent::encode($taskDao);
         //$this->view->json['inputParams'] = $inputParams;
   
-/*  
-  $inputItemId = $this->_getParam("inputItemId");
-  $outputFolderId = $this->_getParam("outputFolderId");
-  $aValue = $this->_getParam("aValue");
-  $pValue = $this->_getParam("pValue");
+/*
+$inputItemId = $this->_getParam("inputItemId");
+$outputFolderId = $this->_getParam("outputFolderId");
+$aValue = $this->_getParam("aValue");
+$pValue = $this->_getParam("pValue");
 
 
-  
-  // export the input item
-  $itemIds = array($inputItemId);
-  $this->exportItemsToWorkDataDir($userDao, $taskDao, $itemIds);
+// export the input item
+$itemIds = array($inputItemId);
+$this->exportItemsToWorkDataDir($userDao, $taskDao, $itemIds);
 
 
-        
-  $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/unu_condor_postscript.py';
-  $configScriptStem = "unu";
-  
-  // get the bitstream path, assuming latest revision of item, one bitstream in item
-  // don't really like this, halfway recreating the export, and dependent upon
-  // the export to work in a certain way for this to work
-  $datapath = $taskDao->getWorkDir() . 'data/';
-  $modelLoad = new MIDAS_ModelLoader();
-  $itemModel = $modelLoad->loadModel('Item');
-  $itemDao = $itemModel->load($inputItemId);
-  $revisionDao = $itemModel->getLastRevision($itemDao);
-  $bitstreamDaos = $revisionDao->getBitstreams();
-  if(empty($bitstreamDaos))
-    {
-    throw new Zend_Exception("This item had no bitstreams.");
-    }
-  $imageBitstreamDao = $bitstreamDaos[0];
-  $exportedBitstreamPath = $datapath . $inputItemId . '/' . $imageBitstreamDao->getName();
-  
-  $appTaskConfigProperties = array();
-  $appTaskConfigProperties['cfg_inputImagePath'] = $exportedBitstreamPath;
-  $appTaskConfigProperties['cfg_outputFolderId'] = $outputFolderId;
-  $appTaskConfigProperties['cfg_aValue'] = $aValue;
-  $appTaskConfigProperties['cfg_pValue'] = $pValue;
+$condorPostScriptPath = BASE_PATH . '/modules/rodent/library/unu_condor_postscript.py';
+$configScriptStem = "unu";
+// get the bitstream path, assuming latest revision of item, one bitstream in item
+// don't really like this, halfway recreating the export, and dependent upon
+// the export to work in a certain way for this to work
+$datapath = $taskDao->getWorkDir() . 'data/';
+$modelLoad = new MIDAS_ModelLoader();
+$itemModel = $modelLoad->loadModel('Item');
+$itemDao = $itemModel->load($inputItemId);
+$revisionDao = $itemModel->getLastRevision($itemDao);
+$bitstreamDaos = $revisionDao->getBitstreams();
+if(empty($bitstreamDaos))
+{
+throw new Zend_Exception("This item had no bitstreams.");
+}
+$imageBitstreamDao = $bitstreamDaos[0];
+$exportedBitstreamPath = $datapath . $inputItemId . '/' . $imageBitstreamDao->getName();
+$appTaskConfigProperties = array();
+$appTaskConfigProperties['cfg_inputImagePath'] = $exportedBitstreamPath;
+$appTaskConfigProperties['cfg_outputFolderId'] = $outputFolderId;
+$appTaskConfigProperties['cfg_aValue'] = $aValue;
+$appTaskConfigProperties['cfg_pValue'] = $pValue;
 
-  $executeComponent->generateBatchmakeConfig($taskDao, $appTaskConfigProperties, $condorPostScriptPath, $configScriptStem);
-  
-  $bmScript = "unu.bms";
-  $kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
-  $kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
-  $kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
-  $dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
-  $kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
+$executeComponent->generateBatchmakeConfig($taskDao, $appTaskConfigProperties, $condorPostScriptPath, $configScriptStem);
+$bmScript = "unu.bms";
+$kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
+$kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
+$kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
+$dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
+$kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
 
-  */
+*/
   }
     
   

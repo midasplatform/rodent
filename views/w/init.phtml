@@ -11,7 +11,7 @@ PURPOSE.  See the above copyright notices for more information.
 =========================================================================*/
 $this->headScript()->appendFile($this->coreWebroot . '/public/js/jquery/jquery.form.js');
 $this->headScript()->appendFile($this->coreWebroot . '/public/js/jquery/jquery.timepicker-addon.js');
-$this->headScript()->appendFile($this->moduleWebroot . '/public/js/as/as.init.js');
+$this->headScript()->appendFile($this->moduleWebroot . '/public/js/w/w.init.js');
 $this->headScript()->appendFile($this->coreWebroot . '/public/js/jquery/jquery.smartWizard-2.0.js');
 ?>
 <link type="text/css" rel="stylesheet" href="<?php echo $this->moduleWebroot?>/public/css/unu/unu.init.css" />
@@ -119,6 +119,10 @@ $prefix = $this->inputs['prefix'];
            if($parameterDef['type'] === 'boolean')
              {
              echo '<input type="checkbox" class="pipelineparameter" id="'. $prefix . $parameterId .'" >'.$parameterDef['label'] . '<br/>';
+             }
+	   elseif($parameterDef['type'] === 'text' )
+             {
+             echo '<input type="text" class="pipelineparameter" id="'. $prefix . $parameterId .'">'.$parameterDef['label'] . '<br/>';
              }
            elseif($parameterDef['type'] === 'integer')
              {

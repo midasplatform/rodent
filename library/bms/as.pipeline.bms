@@ -1,0 +1,427 @@
+echo('1')
+
+############Include needed files#######################
+# properties from midas
+include( as.config.bms)
+#include( asconfig.bms)
+#include( globalconfig.bms)
+
+
+##### from MIDAS to batchmake #####
+Set(PopulationAtlas ${populationatlas})
+Set(PopAtlas_mask ${populationatlasmask})
+Set(TemplateFile ${template})
+Set(TEMPLATE_mask ${templatemask})
+Set(PARCELLATIONFile ${parcellation})
+Set(IMAGE_GRID ${imagegrid})
+Set(Diffeomorphic ${diffeomorphic})
+Set(Smooth ${smooth})
+Set(IS_SCALED ${scaled})
+#Set(Measures ${similaritymetrics})
+#Set(bin_number ${antsbin})
+#Set(Step
+#Set(similaritymetrics
+#Set(ImageDimension
+
+############Register atlas with new MD/atlas image#######################
+#Variables initialization
+
+
+
+set( temp ${cfg_output_directory}/AtlasSegmentationTemp )
+MakeDirectory( ${temp} )
+set( ImageToRegTo ${PopulationAtlas} )
+#set( PopAtlas_mask ${PopAtlas_mask_FILENAME} )
+#set( TEMPLATE_mask ${TEMPLATE_mask_FILENAME} )
+#set( PARCELLATIONFile ${PARCELLATION_FILE_NAME} )
+set(PopAtlas_mask_FILENAME ${PopAtlas_mask})
+set(TEMPLATE_mask_FILENAME ${templatemask})
+
+RegEx( tempExpr ${PARCELLATIONFile} '/.+/' REPLACE '' )
+RegEx( PARCELLATION_FILE_TAG ${tempExpr} '\..*' REPLACE '' ) #does it work?
+
+RegEx( tempExpr ${TemplateFile} '/.+/' REPLACE '' )
+RegEx( TEMPLATE_TAG ${tempExpr} '\..*' REPLACE '' ) #bis?
+
+RegEx( tempExpr ${PopulationAtlas} '/.+/' REPLACE '' )
+RegEx( PopulationAtlas_TAG ${tempExpr} '\..*' REPLACE '' )
+
+
+
+############Smoothes population atlas#######################
+
+
+If(${Smooth} == TRUE)
+  set ( TemplateFile_SMOOTH ${temp}/${TEMPLATE_TAG}_Smooth_test.nrrd )
+
+ #set ( IMCmd ${ImageMath} ${TemplateFile} -outfile ${TemplateFile_SMOOTH} -smooth -gauss -type float )
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${TemplateFile} )
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outputfile ${TemplateFile_SMOOTH})
+      SetAppOption(imageMath.smooth 1)
+      SetAppOption(imageMath.smooth.smooth 'gauss')
+      SetAppOption(imageMath.type 1)
+      SetAppOption(imageMath.type.giveType 'float')
+  #    CondorPostScript(imageMath ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_outfile})
+
+ echo( ${imageMath} )
+  #if(${step} < 1)
+    run( output ${imageMath} )
+   echo( ${output} )
+  #endif (${step} < 1)
+
+  set( TemplateFile ${TemplateFile_SMOOTH} )
+EndIf(${Smooth} == TRUE)
+
+
+IF( ${IS_SCALED} == TRUE )
+#  set( Cmd ${ITKTransformTools} scale ${PopAtlasDir}/${IMAGE_GRID} ${TemplateFile} ${temp}/ImageGrid.nrrd ${temp}/AtlasGrid.nrrd )
+#################################################################
+# I'M A BAD BAD CHEATING DEBUG LINE, ERASE ME
+      Set (IMAGE_GRID ${ImageToRegTo})
+#################################################################
+      SetApp(itkTransformTools @ITKTransformTools)
+      SetAppOption(itkTransformTools.scale 1)
+      SetAppOption(itkTransformTools.scale.scaleInputImage ${IMAGE_GRID})
+      SetAppOption(itkTransformTools.scale.scaleAtlasImage ${TemplateFile})
+      SetAppOption(itkTransformTools.scale.scaleOutputGridImage ${temp}'/ImageGrid.nrrd') 
+      SetAppOption(itkTransformTools.scale.scaleOutputAtlasGridImage ${temp}'/AtlasGrid.nrrd')
+   #   CondorPostScript(itkTransformTools ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_Output})
+      
+# echo( ${Cmd} )
+#  if(${step} < 2)
+    run( output ${itkTransformTools} )
+    echo( ${output} )
+#  endif (${step} < 2)
+  
+
+  set( template_upscaled ${temp}/Template_upscaled.nrrd )
+#  set( Cmd ${ResampleVolume2} ${TemplateFile} -R ${temp}/AtlasGrid.nrrd ${template_upscaled} )
+      SetApp(rv2 @ResampleVolume2)
+      SetAppOption(rv2.referenceVolume 1)
+      SetAppOption(rv2.referenceVolume.referenceVolume ${temp}'/AtlasGrid.nrrd')
+      SetAppOption(rv2.inputVolume ${TemplateFile})
+      SetAppOption(rv2.outputVolume ${template_upscaled})
+    #  CondorPostScript(rv2 ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_outputVolume})
+
+#  echo( ${Cmd} )
+#  if(${step} < 3)
+    run( output ${rv2} )
+    echo( ${output} )
+#  endif (${step} < 3)
+#  Set( Cmd ${ImageMath} ${template_upscaled} -changeSp 1,1,1 -outfile ${template_upscaled} -type float )
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${template_upscaled})
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outputfile ${template_upscaled})
+      SetAppOption(imageMath.changeSp 1)
+      SetAppOption(imageMath.changeSp.changeSp '1,1,1')
+      SetAppOption(imageMath.threshold 1)
+      SetAppOption(imageMath.threshold.threshold '0.5,42000')
+      SetAppOption(imageMath.type 1)
+      SetAppOption(imageMath.type.giveType 'float')
+     # CondorPostScript(imageMath ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_outfile})
+
+#  echo( ${Cmd} )
+#  if(${step} < 4)
+    run( output ${imageMath} )
+    echo( ${output} )
+#  endif(${step} < 4)
+
+  set( TemplateFile ${template_upscaled} )
+  set( PARCELLATIONFile_upscaled ${temp}/Atlas_upscaled.nrrd )
+#  set( Cmd ${ResampleVolume2} ${PARCELLATIONFile} -R ${temp}/AtlasGrid.nrrd ${PARCELLATIONFile_upscaled} -i nn )
+      SetApp(rv2b @ResampleVolume2)
+      SetAppOption(rv2b.interpolationType 1)
+      SetAppOption(rv2b.interpolationType.interpolationType 'nn') 
+      SetAppOption(rv2b.referenceVolume 1)
+      SetAppOption(rv2b.referenceVolume.referenceVolume ${temp}'/AtlasGrid.nrrd')
+      SetAppOption(rv2b.inputVolume ${PARCELLATIONFile})
+      SetAppOption(rv2b.outputVolume ${PARCELLATIONFile_upscaled})
+#      CondorPostScript(rv2 ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_outputVolume})
+#  echo( ${Cmd} )
+#  if(${step} < 5)
+    run( output ${rv2b} )
+    echo( ${output} )
+#  endif(${step} < 5)
+
+#  Set( Cmd ${ImageMath} ${PARCELLATIONFile_upscaled} -changeSp 1,1,1 -outfile ${PARCELLATIONFile_upscaled} )
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${PARCELLATIONFile_upscaled})
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outfile ${PARCELLATIONFile_upscaled})
+      SetAppOption(imageMath.changeSp 1)
+      SetAppOption(imageMath.changeSp.changeSp '1,1,1')
+#      CondorPostScript(imageMath ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_outfile})
+#  echo( ${Cmd} )
+#  if(${step} < 6)
+    run( output ${imageMath} )
+    echo( ${output} )
+#  endif(${step} < 6)
+
+  set( PARCELLATIONFile ${PARCELLATIONFile_upscaled} )
+  IF(${TEMPLATE_mask_FILENAME} != '' )
+    set ( TEMPLATE_mask_upscaled ${temp}/template_mask_upscaled.nrrd )
+#    set( Cmd ${ResampleVolume2} ${TEMPLATE_mask} -R ${temp}/AtlasGrid.nrrd ${TEMPLATE_mask_upscaled} -i nn )
+      SetApp(rv2 @ResampleVolume2)
+
+
+      SetAppOption(rv2.interpolationType 1)
+      SetAppOption(rv2.interpolationType.interpolationType 'nn') 
+      SetAppOption(rv2.referenceVolume 1)
+      SetAppOption(rv2.referenceVolume.referenceVolume ${temp}'/AtlasGrid.nrrd')
+      SetAppOption(rv2.inputVolume ${TEMPLATE_mask})
+      SetAppOption(rv2.outputVolume ${TEMPLATE_mask_upscaled})
+ #     CondorPostScript(rv2 ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_Output})
+#    echo( ${Cmd} )
+#    if(${step} < 7)
+      run( output ${rv2} )
+      echo( ${output} )
+#    endif(${step} < 7)
+
+
+#    Set( Cmd ${ImageMath} ${TEMPLATE_mask_upscaled} -changeSp 1,1,1 -outfile ${TEMPLATE_mask_upscaled} )
+#    echo( ${Cmd} )
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${TEMPLATE_mask_upscaled})
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outfile ${TEMPLATE_mask_upscaled})
+      SetAppOption(imageMath.changeSp 1)
+      SetAppOption(imageMath.changeSp.changeSp '1,1,1')
+  #    CondorPostScript(imageMath ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_outfile})
+#    if(${step} < 8)
+      run( output ${imageMath} )
+      echo( ${output} )
+#    endif(${step} < 8)
+
+    set( TEMPLATE_mask ${TEMPLATE_mask_upscaled} )
+  ENDIF(${TEMPLATE_mask_FILENAME} != '' )
+ENDIF( ${IS_SCALED} == TRUE )
+
+
+######Uses RI for an initialization and saves transform#####################
+set( TRANSFORM ${temp}/Init_transform.txt )
+set( RegCmd ${RegisterImages} --initialization CentersOfMass ${ImageToRegTo} ${TemplateFile} --saveTransform ${TRANSFORM})
+      SetApp(registerImages @RegisterImages)
+      SetAppOption(registerImages.initialization 1)
+      SetAppOption(registerImages.initialization.initialization 'CentersOfMass') 
+      SetAppOption(registerImages.fixedImage ${ImageToRegTo})
+      SetAppOption(registerImages.movingImage ${TemplateFile}) 
+      SetAppOption(registerImages.saveTransform 1)
+      SetAppOption(registerImages.saveTransform.saveTransform ${TRANSFORM})
+   #   CondorPostScript(registerImages ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_Output})
+#echo( ${RegCmd} )
+#if (${step} < 9)
+  run( output ${registerImages} )
+  echo( ${output} )
+#endif (${step} < 9)
+
+
+
+######ITKTransformTools#####################
+set ( Grid ${temp}/Grid.nrrd )
+#set ( ITKTTCmd ${ITKTransformTools} size ${TemplateFile} ${TRANSFORM} --grid ${Grid} )
+      SetApp(itkTransformTools @ITKTransformTools)
+      SetAppOption(itkTransformTools.size 1)
+      SetAppOption(itkTransformTools.size.sizeInputImage ${TemplateFile})
+      SetAppOption(itkTransformTools.size.sizeInitTransform ${TRANSFORM})
+      SetAppOption(itkTransformTools.grid 1) 
+      SetAppOption(itkTransformTools.grid.sizeGridFile ${Grid})
+    #  CondorPostScript(itkTransformTools ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_Output})
+echo( ${itkTransformTools} )
+#if (${step} < 10)
+  run( output ${itkTransformTools} )
+  echo( ${output} )
+#endif (${step} < 10)
+
+
+
+######ResampleVolume2#####################
+set ( TEMPLATE_RV2 ${temp}/${TEMPLATE_TAG}_initialized.nrrd ) 
+set ( RV2Cmd ${ResampleVolume2} -f ${TRANSFORM} -i nn -R ${Grid} ${TemplateFile} ${TEMPLATE_RV2})
+      SetApp(rv2 @ResampleVolume2)
+      SetAppOption(rv2.transformationFile 1)
+      SetAppOption(rv2.transformationFile.transformationFile ${TRANSFORM})
+      SetAppOption(rv2.interpolationType 1)
+      SetAppOption(rv2.interpolationType.interpolationType 'nn') 
+      SetAppOption(rv2.referenceVolume 1)
+      SetAppOption(rv2.referenceVolume.referenceVolume ${Grid})
+      SetAppOption(rv2.inputVolume ${TemplateFile})
+      SetAppOption(rv2.outputVolume ${TEMPLATE_RV2})
+     # CondorPostScript(rv2 ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_outputVolume})
+echo( ${rv2} )
+#if (${step} < 11)
+  run( output ${rv2} )
+  echo( ${output} )
+#endif (${step} < 11)
+
+
+set ( PARCELLATION_FILE ${populationatlas})OA
+set ( PARCELLATION_FILE_RV2 ${temp}/${PARCELLATION_FILE_TAG}_initialized.nrrd )
+
+#set ( RV2Cmd ${ResampleVolume2} -f ${TRANSFORM} -i nn -R ${Grid} ${PARCELLATION_FILE} ${PARCELLATION_FILE_RV2})
+set ( RV2Cmd ${ResampleVolume2} -f ${TRANSFORM} -i nn -R ${Grid} ${PARCELLATION_FILE} ${PARCELLATION_FILE_RV2})
+      SetApp(rv2 @ResampleVolume2)
+      SetAppOption(rv2.transformationFile 1)
+      SetAppOption(rv2.transformationFile.transformationFile ${TRANSFORM})
+      SetAppOption(rv2.interpolationType 1)
+      SetAppOption(rv2.interpolationType.interpolationType 'nn') 
+      SetAppOption(rv2.referenceVolume 1)
+      SetAppOption(rv2.referenceVolume.referenceVolume ${Grid})
+      SetAppOption(rv2.inputVolume ${PARCELLATION_FILE})
+      SetAppOption(rv2.outputVolume ${PARCELLATION_FILE_RV2})
+#      CondorPostScript(rv2 ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_outputVolume})
+
+
+echo( ${rv2} )
+#if (${step} < 12)
+  run( output ${rv2} )
+  echo( ${output} )
+#endif (${step} < 12)
+
+
+IF(${TEMPLATE_mask_FILENAME} != '' )
+  set ( TEMPLATE_MASK_FILE_RV2 ${temp}/${TEMPLATE_TAG}_mask_initialized.nrrd )
+#  set ( RV2Cmd ${ResampleVolume2} -f ${TRANSFORM} -i nn -R ${Grid} ${TEMPLATE_mask} ${TEMPLATE_MASK_FILE_RV2})
+set ( RV2Cmd ${ResampleVolume2} -f ${TRANSFORM} -i nn -R ${Grid} ${TemplateFile} ${TEMPLATE_RV2})
+      SetApp(rv2 @ResampleVolume2)
+      SetAppOption(rv2.transformationFile 1)
+      SetAppOption(rv2.transformationFile.transformationFile ${TRANSFORM})
+      SetAppOption(rv2.interpolationType 1)
+      SetAppOption(rv2.interpolationType.interpolationType 'nn') 
+      SetAppOption(rv2.referenceVolume 1)
+      SetAppOption(rv2.referenceVolume.referenceVolume ${Grid})
+      SetAppOption(rv2.inputVolume ${TEMPLATE_mask})
+      SetAppOption(rv2.outputVolume ${TEMPLATE_MASK_FILE_RV2})
+ #     CondorPostScript(rv2 ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_outputVolume})
+  echo( ${rv2} )
+#  if (${step} < 13)
+    run( output ${rv2} )
+    echo( ${output} )
+#  endif (${step} < 13)
+
+ENDIF(${TEMPLATE_mask_FILENAME} != '' )
+
+
+set( NII_FILE_PREFIX ${PopulationAtlas_TAG}_to_${TEMPLATE_TAG}_ANTS )
+set( WARP_FILE ${NII_FILE_PREFIX}Warp.nii.gz )
+set( AFFINE_FILE ${NII_FILE_PREFIX}Affine.txt )
+
+
+IF(${TEMPLATE_mask_FILENAME} != '' && ${PopAtlas_mask_FILENAME} != '' )
+  #####ANTS#####################
+  set ( TEMPLATE_mask_IM ${temp}/${TEMPLATE_TAG}_mask_IM.nrrd )
+  set ( PopAtlas_mask_IM ${temp}/${PopulationAtlas_TAG}_mask_IM.nrrd )
+#  set ( IMCmd ${ImageMath} ${TEMPLATE_MASK_FILE_RV2} -outfile ${TEMPLATE_mask_IM} -threshold 0.5,42000)
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${TEMPLATE_MASK_FILE_RV2})
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outputfile ${TEMPLATE_mask_IM})
+      SetAppOption(imageMath.threshold 1)
+      SetAppOption(imageMath.threshold.threshold '0.5,42000')
+  #    CondorPostScript(imageMath ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_outfile})
+  echo( ${imageMath} )
+#  if (${step} < 14)
+    run( output ${imageMath} )
+    echo( ${output} )
+#  endif (${step} < 14)
+
+#  set ( IMCmd ${ImageMath} ${PopAtlas_mask} -outfile ${PopAtlas_mask_IM} -threshold 0.5,42000)
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${PopAtlas_mask})
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outputfile ${PopAtlas_mask_IM})
+      SetAppOption(imageMath.threshold 1)
+      SetAppOption(imageMath.threshold.threshold '0.5,42000')
+   #   CondorPostScript(imageMath ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_outfile})
+  echo( ${imageMath} )
+#  if (${step} < 15)
+    run( output ${imageMath} )
+    echo( ${output} )
+#  endif (${step} < 15)
+
+  set( PopAtlas_mask ${PopAtlas_mask_IM} )
+  set( TEMPLATE_MASK_FILE_RV2 ${TEMPLATE_mask_IM} )
+ENDIF(${TEMPLATE_mask_FILENAME} != '' && ${PopAtlas_mask_FILENAME} != '' )
+
+IF(${TEMPLATE_mask_FILENAME} != '' && ${PopAtlas_mask_FILENAME} != '' )
+  set( mask_add_Cmd -m MSQ[${PopAtlas_mask}, ${TEMPLATE_MASK_FILE_RV2}, 1, 0] )
+ELSE(${TEMPLATE_mask_FILENAME} != '' && ${PopAtlas_mask_FILENAME} != '' )
+  set( mask_add_Cmd '' )
+ENDIF(${TEMPLATE_mask_FILENAME} != '' && ${PopAtlas_mask_FILENAME} != '' )
+
+
+IF(${Diffeomorphic} == TRUE )
+  ####Diffeomorphic
+  set( regularization 'Gauss[1,0]')
+  set( transformation 'SyN[0.25]')
+  set( iteration '30x35x40')
+ELSE(${Diffeomorphic} == TRUE) 
+  ####Elastic
+  set( regular 'Gauss[3,0]')
+  set( trans 'Elast[1.5]')
+  set( iter '30x20x10')
+ENDIF(${Diffeomorphic} == TRUE)
+echo('ants')
+#set ( AntsCmd ${ANTS} 3 -m MI[${ImageToRegTo}, ${TEMPLATE_RV2}, 1, ${bin_number}] ${mask_add_Cmd} ${diff_Elast_Cmd} -o ${NII_FILE_PREFIX} )
+set(metricsCommandLine 'MI['${ImageToRegTo}', '${TEMPLATE_RV2}', 1, 32]')
+	SetApp(ants @ANTS)
+	SetAppOption(ants.dimension '3')
+	SetAppOption(ants.metrics 1)
+	SetAppOption(ants.metrics.metricsCommand ${metricsCommandLine})
+	SetAppOption(ants.regularization 1)
+	SetAppOption(ants.regularization.rvalue ${regular})
+	SetAppOption(ants.transformation 1)
+	SetAppOption(ants.transformation.tvalue ${trans})
+	SetAppOption(ants.iteration 1)
+	SetAppOption(ants.iteration.ivalue ${iter})
+	SetAppOption(ants.output 1)
+	SetAppOption(ants.output.outputfile ${NII_FILE_PREFIX})
+  #      CondorPostScript(ants ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_output})
+echo( ${ants} )
+#if (${step} < 16)
+  run( output ${ants} )
+  echo( ${output} )
+#endif (${step} < 16)
+
+
+
+######Warp#####################
+set( TEMPLATE_RV2_WARP ${temp}/${TEMPLATE_TAG}_ANTS_Warp.nrrd  )
+set( WarpCmd ${WarpImageMultiTransform} 3 ${TEMPLATE_RV2} ${TEMPLATE_RV2_WARP} ${WARP_FILE} ${AFFINE_FILE} -R ${ImageToRegTo} )
+	SetApp(warp @WarpImageMultiTransform)
+	SetAppOption(warp.dimension '3')
+	SetAppOption(warp.input  ${TEMPLATE_RV2})
+	SetAppOption(warp.output ${TEMPLATE_RV2_WARP})
+	SetAppOption(warp.warpFile ${WARP_FILE})
+	SetAppOption(warp.affineFile ${AFFINE_FILE})
+	SetAppOption(warp.reference 1)
+	SetAppOption(warp.reference.reference ${ImageToRegTo})
+   #     CondorPostScript(warp ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_output})
+echo( ${warp} )
+#if (${step} < 17)
+  Run( output ${warp} )
+  echo( ${output} )
+#endif (${step} < 17)
+#
+######Warp atlas (parcellation)############
+set ( PARCELLATION_FILE_RV2_WARP ${temp}/${PARCELLATION_FILE_TAG}.nrrd )
+set( WarpCmd ${WarpImageMultiTransform} 3 ${PARCELLATION_FILE_RV2} ${PARCELLATION_FILE_RV2_WARP} ${WARP_FILE} ${AFFINE_FILE} -R ${ImageToRegTo} --use-NN)
+	SetApp(warp @WarpImageMultiTransform)
+	SetAppOption(warp.dimension '3')
+	SetAppOption(warp.input  ${PARCELLATION_FILE_RV2})
+	SetAppOption(warp.output ${PARCELLATION_FILE_RV2_WARP})
+	SetAppOption(warp.warpFile ${WARP_FILE})
+	SetAppOption(warp.affineFile ${AFFINE_FILE})
+	SetAppOption(warp.reference 1)
+	SetAppOption(warp.reference.reference ${ImageToRegTo})
+	SetAppOption(warp.useNN 1)
+    #    CondorPostScript(warp ${cfg_condorpostscript} ${cfg_midas_baseURL} ${cfg_itemid} ${cfg_email} ${cfg_appname} ${cfg_apikey} ${cfg_Output_directory} ${cfg_output})
+echo( ${warp} )
+#if (${step} < 18)
+  run( output ${warp} )
+  echo( ${output} )
+#endif (${step} < 18)
+
+

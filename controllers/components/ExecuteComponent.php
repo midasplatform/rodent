@@ -56,7 +56,7 @@ class Rodent_ExecuteComponent extends AppComponent
       }
     $configFileLines[] = "Set(cfg_condorpostscript '" . $condorPostScriptPath . "')";
     $configFileLines[] = "Set(cfg_output_directory '" . $taskDao->getWorkDir() . "')";
-    $configFileLines[] = "Set(cfg_exe '/usr/bin/python')";
+    $configFileLines[] = "Set(cfg_exe '/usr/bin/python26 ')";
     $configFileLines[] = "Set(cfg_condordagpostscript '" . BASE_PATH . "/modules/batchmake/library/condor_dag_postscript.py')";
     $configFileLines[] = "Set(cfg_taskId '" . $taskDao->getBatchmakeTaskId() . "')";
 
