@@ -17,6 +17,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 =========================================================================*/
+require_once BASE_PATH.'/modules/rodent/AppController.php';
 /** as controller*/
 class Rodent_AsController extends Rodent_AppController
 {
