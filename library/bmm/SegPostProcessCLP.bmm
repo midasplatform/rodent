@@ -8,14 +8,14 @@
                                 <Type>4</Type>
                                 <Name>label</Name>
                                 <Value></Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>0</Optional>
                        </Parameter>
                        <Parameter>
                                 <Type>4</Type>
                                 <Name>mask</Name>
                                 <Value></Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>0</Optional>
                        </Parameter>
                 </Parameters>

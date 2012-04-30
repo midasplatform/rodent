@@ -9,14 +9,14 @@
                                 <Type>4</Type>
                                 <Name>input</Name>
                                 <Value></Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>0</Optional>
                        </Parameter>
                        <Parameter>
                                 <Type>4</Type>
                                 <Name>output</Name>
                                 <Value></Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                        </Parameter>
 
@@ -24,13 +24,13 @@
                                 <Type>1</Type>
                                 <Name>transform</Name>
                                 <Value>-f</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>transformFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -39,13 +39,13 @@
                                 <Type>1</Type>
                                 <Name>grid</Name>
                                 <Value>-R</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>gridFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -54,13 +54,13 @@
                                 <Type>4</Type>
                                 <Name>hField</Name>
                                 <Value>-H</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>hFieldFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -69,13 +69,13 @@
                                 <Type>4</Type>
                                 <Name>lambda2_output</Name>
                                 <Value>--transform_order</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>input-to-output</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>

@@ -8,13 +8,13 @@
                                 <Type>1</Type>
                                 <Name>input</Name>
                                 <Value>-i</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>inputFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -22,13 +22,13 @@
                                 <Type>1</Type>
                                 <Name>output</Name>
                                 <Value>-o</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>outputFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -37,20 +37,20 @@
                                 <Type>1</Type>
                                 <Name>pad</Name>
                                 <Value>pad</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                        </Parameter>
                        <Parameter>
                                 <Type>1</Type>
                                 <Name>min</Name>
                                 <Value>-min</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>1</Type>
                                         <Name>minValues</Name>
                                         <Value>-10 -10 -10</Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -58,13 +58,13 @@
                                 <Type>1</Type>
                                 <Name>max</Name>
                                 <Value>-max</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>1</Type>
                                         <Name>maxValues</Name>
                                         <Value>M+10 M+10 M+10</Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -72,13 +72,13 @@
                                 <Type>1</Type>
                                 <Name>b</Name>
                                 <Value>-b</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>1</Type>
                                         <Name>pad</Name>
                                         <Value>pad</Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -87,20 +87,20 @@
                                 <Type>1</Type>
                                 <Name>convert</Name>
                                 <Value>convert</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                        </Parameter>
                        <Parameter>
                                 <Type>1</Type>
                                 <Name>type</Name>
                                 <Value>-t</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>unuType</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -109,13 +109,13 @@
                                 <Type>1</Type>
                                 <Name>1op</Name>
                                 <Value>1op</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>1</Type>
                                         <Name>if</Name>
                                         <Value>if</Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>

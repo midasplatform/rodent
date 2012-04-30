@@ -8,20 +8,41 @@
                                 <Type>1</Type>
                                 <Name>size</Name>
                                 <Value>size</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>sizeInputImage</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>sizeInitTransform</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                       </Parameter>
+                       <Parameter>
+                                <Type>1</Type>
+                                <Name>direction</Name>
+                                <Value>direction</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>input</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>output</Name>
+                                        <Value></Value>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -29,13 +50,13 @@
                                 <Type>1</Type>
                                 <Name>grid</Name>
                                 <Value>--grid</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>sizeGridFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -44,20 +65,20 @@
                                 <Type>1</Type>
                                 <Name>MO2Aff</Name>
                                 <Value>MO2Aff</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>MO2AffInputTransform</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>MO2AffOutputTransform</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -66,27 +87,27 @@
                                 <Type>1</Type>
                                 <Name>combine</Name>
                                 <Value>combine</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>combineInitTransform</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>combineRigidTransform</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>combineAffineTransform</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -94,13 +115,13 @@
                                 <Type>1</Type>
                                 <Name>combineOutput</Name>
                                 <Value>-o</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>combineOutput</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -109,35 +130,35 @@
                                 <Type>1</Type>
                                 <Name>scale</Name>
                                 <Value>scale</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>scaleInputImage</Name>
                                         <Value></Value>
-                                        <External>2</External>
-                                        <Optional>1</Optional>
+                                        <External>0</External>
+                                        <Optional>0</Optional>
                                 </SubParameter>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>scaleAtlasImage</Name>
                                         <Value></Value>
-                                        <External>2</External>
-                                        <Optional>1</Optional>
+                                        <External>0</External>
+                                        <Optional>0</Optional>
                                 </SubParameter>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>scaleOutputGridImage</Name>
                                         <Value></Value>
-                                        <External>2</External>
-                                        <Optional>1</Optional>
+                                        <External>0</External>
+                                        <Optional>0</Optional>
                                 </SubParameter>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>scaleOutputAtlasGridImage</Name>
                                         <Value></Value>
-                                        <External>2</External>
-                                        <Optional>1</Optional>
+                                        <External>0</External>
+                                        <Optional>0</Optional>
                                 </SubParameter>
                        </Parameter>
                 </Parameters>

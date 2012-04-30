@@ -8,13 +8,13 @@
                                 <Type>1</Type>
                                 <Name>dti_image</Name>
                                 <Value>-dti_image</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>0</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>dti_imageFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>0</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -22,13 +22,13 @@
                                 <Type>1</Type>
                                 <Name>matrix</Name>
                                 <Value>-m</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>matrixFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -36,13 +36,13 @@
                                 <Type>1</Type>
                                 <Name>color_fa_output</Name>
                                 <Value>--color_fa_output</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>color_fa_outputFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -50,13 +50,13 @@
                                 <Type>1</Type>
                                 <Name>lambda1_output</Name>
                                 <Value>--lambda1_output</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>lambda1_outputFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -64,13 +64,13 @@
                                 <Type>1</Type>
                                 <Name>lambda2_output</Name>
                                 <Value>--lambda2_output</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>lambda2_outputFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -78,13 +78,13 @@
                                 <Type>1</Type>
                                 <Name>lambda3_output</Name>
                                 <Value>--lambda3_output</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>lambda3_outputFile</Name>
                                         <Value></Value>
-                                        <External>2</External>
+                                        <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
@@ -92,7 +92,7 @@
                                 <Type>1</Type>
                                 <Name>scalarFloat</Name>
                                 <Value>--scalar-float</Value>
-                                <External>1</External>
+                                <External>0</External>
                                 <Optional>0</Optional>
                        </Parameter>
 

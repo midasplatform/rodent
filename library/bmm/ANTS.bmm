@@ -98,6 +98,21 @@
                        </Parameter>
                        <Parameter>
                                 <Type>1</Type>
+                                <Name>rigid-affine</Name>
+                                <Value>--rigid-affine</Value>
+                                <External>0</External>
+                                <Optional>0</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>rigid-affine</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Noquote>1</Noquote>
+                                        <Optional>0</Optional>
+                                </SubParameter>
+                       </Parameter>
+			<Parameter>
+                                <Type>1</Type>
                                 <Name>output</Name>
                                 <Value>-o</Value>
                                 <External>0</External>
