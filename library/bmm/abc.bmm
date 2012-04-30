@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+        <executable>
+                <Name>ABC</Name>
+                <Version>1.0</Version>
+                <Path>/midas/midas3base/batchmake/ABC</Path>
+                <Parameters>
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>ABCFile</Name>
+                                <Value></Value>
+                                <External>1</External>
+                                <Optional>0</Optional>
+                       </Parameter>
+                </Parameters>
+        </executable>

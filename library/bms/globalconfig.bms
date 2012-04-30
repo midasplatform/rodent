@@ -1,0 +1,51 @@
+##Check that the version is the same in the example and in the config file you are modifying.
+##If not, copy and modify this example to have a version of the configuration file that is up
+##to date.
+##Version:@ConfigVersion@
+#################################################################################################
+##Set up path of executables. If the binaries are in the path,
+##you can just put the name of the executable
+#DWIProcessPipeline
+set( DWIProcessPipeline '@DWIProcessPipelineTOOL@' )
+#ABC
+set( ABC '@ABCTOOL@' )
+#SegPostProcessCLP
+set( SegPostProcessCLP '@SegPostProcessCLPTOOL@' )
+#ImageMath
+set( ImageMath '@ImageMathTOOL@' )
+#ResampleVolume2
+set( ResampleVolume2 '@ResampleVolume2TOOL@' )
+#rreg
+set( rreg '@rregTOOL@' )
+#transformation
+set( transformation '@transformationTOOL@' )
+#areg
+set( areg '@aregTOOL@' )
+#RegisterImages
+set( RegisterImages '@RegisterImagesTOOL@' )
+#Double2FloatTransform
+set( Double2FloatTransform '@Double2FloatTransformTOOL@' )
+#AtlasWerks
+set( AtlasWerks '@AtlasWerksTOOL@' )
+#ResampleDTIlogEuclidean
+set( ResampleDTIlogEuclidean '@ResampleDTIlogEuclideanTOOL@' )
+#BRAINSDemonWarp
+set( BRAINSDemonWarp '@BRAINSDemonWarpTOOL@' )
+#dtiaverage
+set( dtiaverage '@dtiaverageTOOL@' )
+#unu
+set( unu '@unuTOOL@' )
+#dtiprocess
+set( dtiprocess '@dtiprocessTOOL@' )
+#ITKTransformTools
+set( ITKTransformTools '@ITKTransformToolsTOOL@' )
+#MedianFilter
+set( MedianImageFilter '@MedianImageFilterTOOL@' )
+#ImageStat
+set( ImageStat '@ImageStatTOOL@' )
+#ANTS
+set ( ANTS '@ANTSTOOL@' )
+#WarpImageMultiTransform 
+set ( WarpImageMultiTransform '@WarpImageMultiTransformTOOL@' )
+#buildtemplateparallel
+set ( buildtemplateparallel '@buildtemplateparallelTOOL@' )

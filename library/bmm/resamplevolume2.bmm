@@ -1,0 +1,87 @@
+Cmd ${ResampleVolume2} -R ${InitialTransformGrid} -f ${InitialTransform} ${template} ${InitialTemplate} -i nn 
+Cmd ${ResampleVolume2} ${AtlasDir}/${j} ${ResampledImage} -i nn -R ${image} ${hfield} )
+    set( ResampleCmd ${ResampleVolume2} ${MD} ${TRANSFORMED_MD} -H ${hfield})
+
+<?xml version="1.0" encoding="utf-8"?>
+        <executable>
+                <Name>ResampleVolume2</Name>
+                <Version>1.0</Version>
+                <Path>/midas/midas3base/batchmake/ResampleVolume2</Path>
+                <Parameters>
+
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>input</Name>
+                                <Value></Value>
+                                <External>1</External>
+                                <Optional>0</Optional>
+                       </Parameter>
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>output</Name>
+                                <Value></Value>
+                                <External>1</External>
+                                <Optional>1</Optional>
+                       </Parameter>
+
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>transform</Name>
+                                <Value>-f</Value>
+                                <External>1</External>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>transformFile</Name>
+                                        <Value></Value>
+                                        <External>2</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                       </Parameter>
+
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>grid</Name>
+                                <Value>-R</Value>
+                                <External>1</External>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>gridFile</Name>
+                                        <Value></Value>
+                                        <External>2</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                       </Parameter>
+
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>hField</Name>
+                                <Value>-H</Value>
+                                <External>1</External>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>hFieldFile</Name>
+                                        <Value></Value>
+                                        <External>2</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                       </Parameter>
+
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>interpolation</Name>
+                                <Value>-i</Value>
+                                <External>1</External>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>nearestNeighbor</Name>
+                                        <Value>nn</Value>
+                                        <External>2</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                       </Parameter>
+                    </Parameters>
+        </executable>

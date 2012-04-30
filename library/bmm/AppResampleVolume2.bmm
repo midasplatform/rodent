@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+        <executable>
+                <Name>AppResampleVolume2</Name>
+                <Version>1.0</Version>
+                <Path>/midas/midas3base/batchmake/bin/ResampleVolume2</Path>
+                <Parameters>
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>option1</Name>
+                                <Value></Value>
+                                <External>0</External>
+                                <Optional>0</Optional>
+                       </Parameter>
+                       <Parameter>
+                                <Type>4</Type>e
+                                <Name>option2</Name>
+                                <Value></Value>
+                                <External>0</External>
+                                <Optional>0</Optional>
+                       </Parameter>
+                </Parameters>
+        </executable>
