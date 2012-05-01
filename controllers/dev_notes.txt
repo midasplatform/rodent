@@ -1,0 +1,8 @@
+Tested : AsController.php
+
+2-Registration => RegController
+3-SkullStrip => SsController
+4-Atlas => AController
+5-AtlasSegmentation => AsController (tested)
+6-Warp => WController
+7-Stat => StController
