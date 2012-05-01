@@ -58,15 +58,22 @@ class Rodent_AsController extends Rodent_AppController
     foreach($itemsForExport as $configParam => $itemId)
       {
       $itemDao = $itemModel->load($itemId);
-      $revisionDao = $itemModel->getLastRevision($itemDao);
-      $bitstreamDaos = $revisionDao->getBitstreams();
-      if(empty($bitstreamDaos))
+      if($itemDao)
         {
-        throw new Zend_Exception("Item ".$itemId." had no bitstreams.");
+        $revisionDao = $itemModel->getLastRevision($itemDao);
+        $bitstreamDaos = $revisionDao->getBitstreams();
+        if(empty($bitstreamDaos))
+          {
+          throw new Zend_Exception("Item ".$itemId." had no bitstreams.");
+          }
+        $imageBitstreamDao = $bitstreamDaos[0];
+        $exportedBitstreamPath = $datapath . '/' . $itemId . '/' . $imageBitstreamDao->getName();
+        $configParamsToBitstreamPaths[$configParam] = $exportedBitstreamPath;
         }
-      $imageBitstreamDao = $bitstreamDaos[0];
-      $exportedBitstreamPath = $datapath . '/' . $itemId . '/' . $imageBitstreamDao->getName();
-      $configParamsToBitstreamPaths[$configParam] = $exportedBitstreamPath;
+      else 
+        {
+        $configParamsToBitstreamPaths[$configParam] = "";
+        }
       }
     return $configParamsToBitstreamPaths;
     }
