@@ -17,7 +17,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 =========================================================================*/
-require_once BASE_PATH.'/modules/rodent/AppController.php';
 /** as controller*/
 class Rodent_AsController extends Rodent_AppController
 {
@@ -109,7 +108,7 @@ class Rodent_AsController extends Rodent_AppController
     $folderSelections = array("outputdirectory" => "Output Directory");
  
     $itemSelections = array("populationaverage" => "Population Average",
-        "populationaaveragemask" => "Population Average Mask",
+        "populationaveragemask" => "Population Average Mask",
         "template" => "Template",
         "templatemask" => "Template Mask",
         "segmentation" => "Segmentation",
