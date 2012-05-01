@@ -121,6 +121,7 @@ class Rodent_AsController extends Rodent_AppController
     $inputs = array("prefix" => $this->pipelinePrefix, "folders" => $folderSelections, "items" => $itemSelections, "parameters" => $parameters);
     $this->view->inputs = $inputs;
     $this->view->json['inputs'] = $inputs;
+    $this->view->json['itemLabels'] = $itemSelections;
     
     
     }
