@@ -1,12 +1,8 @@
 var midas = midas || {};
 midas.rodent = midas.rodent || {};
-midas.rodent.as = midas.rodent.as || {};
+midas.rodent.ss = midas.rodent.ss|| {};
 
-midas.rodent.as.currentBrowser = false;
-//var inittializedExecutableForm = false;
-//var executableValid = false;
-//var isExecutableMeta = false;
-//var isDefineAjax = true;
+midas.rodent.ss.currentBrowser = false;
 var results = new Array;
 
 $(document).ready(function(){
@@ -26,9 +22,9 @@ $(document).ready(function(){
     labelPrevious:'Previous', // label for Previous button
     labelFinish:'Create Job',  // label for Finish button
     // Events
-    onLeaveStep: midas.rodent.as.onLeaveStepCallback, // triggers when leaving a step
-    onShowStep: midas.rodent.as.onShowStepCallback,  // triggers when showing a step
-    onFinish: midas.rodent.as.onFinishCallback  // triggers when Finish button is clicked
+    onLeaveStep: midas.rodent.ss.onLeaveStepCallback, // triggers when leaving a step
+    onShowStep: midas.rodent.ss.onShowStepCallback,  // triggers when showing a step
+    onFinish: midas.rodent.ss.onFinishCallback  // triggers when Finish button is clicked
   }
   );
 
@@ -42,17 +38,27 @@ $(document).ready(function(){
 
 
 
-midas.rodent.as.onLeaveStepCallback = function(obj)
+midas.rodent.ss.onLeaveStepCallback = function(obj)
   {
   var step_num= obj.attr('rel'); // get the current step number
-  return midas.rodent.as.validateSteps(step_num); // return false to stay on step and true to continue navigation
+  return midas.rodent.ss.validateSteps(step_num); // return false to stay on step and true to continue navigation
   }
 
-midas.rodent.as.onFinishCallback = function()
+midas.rodent.ss.onFinishCallback = function()
   {
-   if(midas.rodent.as.validateAllSteps())
+   if(midas.rodent.ss.validateAllSteps())
      {
      requestData = {};
+     
+     var prefix = json.inputs.prefix;
+     var cases_class = prefix+'casefolder';
+     $.each($("."+cases_class), function(index, input) {
+         if(input.checked) {
+             requestData[input.id] = input.checked; 
+         }
+     });
+     var suffix = prefix+'suffix';
+     requestData[suffix] = $('#'+suffix).val();
      $.each($(".pipelineparameter"), function(index, input) {
          if(input.type === "checkbox") {
              requestData[input.id] = input.checked;
@@ -90,7 +96,12 @@ midas.rodent.as.onFinishCallback = function()
   }
 
 
-midas.rodent.as.validateSteps = function(stepnumber)
+midas.rodent.ss.selectionCallbacks = {};
+
+
+
+
+midas.rodent.ss.validateSteps = function(stepnumber)
   {
   var isStepValid = true;
   // validate step 1
@@ -98,37 +109,58 @@ midas.rodent.as.validateSteps = function(stepnumber)
   return true;
   }
 
-midas.rodent.as.validateAllSteps = function()
+midas.rodent.ss.validateAllSteps = function()
   {
-  return midas.rodent.as.validateSteps(1) && 
-         midas.rodent.as.validateSteps(2) && 
-         midas.rodent.as.validateSteps(3) && 
-         midas.rodent.as.validateSteps(4);
+  return midas.rodent.ss.validateSteps(1) && 
+         midas.rodent.ss.validateSteps(2) && 
+         midas.rodent.ss.validateSteps(3) && 
+         midas.rodent.ss.validateSteps(4);
   }
 
-midas.rodent.as.onShowStepCallback = function(obj)
+midas.rodent.ss.onShowStepCallback = function(obj)
   {
   var step_num = obj.attr('rel'); // get the current step number
-  /*if(step_num == 1)
-    {
-    $('#midas_rodent_unu_browseImageFile').click(function(){
-      loadDialog("selectitem_imageinput","/browse/selectitem");
-      showDialog('Browse');
-      currentBrowser = 'imageinput';
-    });
-    }*/
   if(step_num == 1)
     {
     var prefix = json.inputs.prefix;
-    var folders = json.inputs.folders;
-    $.each( folders , function(k, v){
-      var id = prefix + k;
-      $('#'+id+'_button').click(function(){
-          loadDialog("selectfolder_outputfolder","/browse/selectfolder");
-          showDialog('Browse');
-          currentBrowser = id;
-      });
-    }); 
+    var id = prefix + "casesdirectory";
+    
+    // create a callback to run after selecting the cases folder
+    var casesCallback = function(folder_id) {
+        // get the list of cases from the server
+        // setup checkboxes to allow the user to select a subset of cases
+        ajaxWebApi.ajax({
+            method: 'midas.folder.children',
+            args: 'id=' + folder_id,
+            success: function(results) {
+                // find all the folder children of the selected folder
+                // add a checkbox for each of them so the user can select cases
+                // TODO remove the checkboxes_div or else disable browse folders button 
+                // because if you keep selecting a folder the checkboxes keep getting added
+                var checkbox_div = $('#step-1').append('<div id="case_folders_checkboxes_div"></div>');
+                checkbox_div.append("Select the cases to run:");
+                var rows = "<ul>";
+                $.each(results.data.folders, function(ind, folder) {
+                    var row_li = '<li><span><input type="checkbox" class="'+prefix+'casefolder" id="'+prefix+"casefolder_"+folder.folder_id+'" />'+folder.name+'</span></li>';                    
+                    rows = rows + row_li;
+                });
+                rows = rows + "</ul>";
+                checkbox_div.append(rows);
+
+                var suffix_span = '<span><input type="text" id="'+prefix+'suffix" />Suffix</span>';                    
+                checkbox_div.append(suffix_span);
+
+            }
+        });
+    };
+    midas.rodent.ss.selectionCallbacks[id] = casesCallback;
+
+    $('#'+id+'_button').click(function(){
+        midas.loadDialog("selectfolder_outputfolder","/browse/selectfolder");
+        midas.showDialog('Browse for Cases folder');
+        currentBrowser = id;
+    });
+    
     }
   if(step_num == 2)
     {
@@ -137,8 +169,8 @@ midas.rodent.as.onShowStepCallback = function(obj)
     $.each( items , function(k, v){
       var id = prefix + k;
       $('#'+id+'_button').click(function(){
-          loadDialog("selectitem_inputitem","/browse/selectitem");
-          showDialog('Browse');
+          midas.loadDialog("selectitem_inputitem","/browse/selectitem");
+          midas.showDialog('Browse');
           currentBrowser = id;
       });
     }); 
@@ -157,9 +189,11 @@ itemSelectionCallback = function(name, id)
   return;
   }
 
-folderSelectionCallback = function(name, id)
+folderSelectionCallback = function(folder_name, folder_id)
   {
-  $('#'+currentBrowser+'_name').html(name);
-  $('#'+currentBrowser).val(id);
+  $('#'+currentBrowser+'_name').html(folder_name);
+  $('#'+currentBrowser).val(folder_id);
+  var callBack = midas.rodent.ss.selectionCallbacks[currentBrowser];
+  callBack(folder_id);
   return;
   }

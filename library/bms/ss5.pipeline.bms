@@ -1,0 +1,300 @@
+### The script uses:
+#- rreg
+#- transformation
+#- areg
+#- ResampleVolume2
+###############################
+# iterate over all cases and do initial registration onto template frame
+
+Echo ('Registering '${Case})
+
+	# requires three files
+	# 1) source file (subject image)
+	# 2) destination file (template image)
+	# 3) transformation file
+	# 4) registration parameter file (if necessary)
+
+set ( TemplateFile_TAG template )
+
+If( ${IS_SCALED} == TRUE )
+  Set ( TemplateFile ${tempDir}/${Case}/${TemplateFile_TAG}.nii.gz )
+Else( ${IS_SCALED} == TRUE )
+  Set ( TemplateFile ${tempDir}/${TemplateFile_TAG}.nii.gz )
+EndIf( ${IS_SCALED} == TRUE )
+
+If( ${i} != 0 )
+  Set( CaseImg ${CORRECTED} )
+  set( masked_image ${tempDir}/${Case}/${Case}${RIGID_REGISTRATION_IMAGE_TAG}_masked${i}.nii.gz)
+  set( Cmd ${ImageMath} ${CaseImg} -mask ${dilatedMASK} -outfile ${masked_image} -type float )
+      SetApp(ImageMathCmd @ImageMath)
+      SetAppOption(ImageMathCmd.infile ${CaseImg})
+      SetAppOption(ImageMathCmd.mask 1)
+      SetAppOption(ImageMathCmd.mask.mask ${dilatedMASK})
+      SetAppOption(ImageMathCmd.outfile 1)
+      SetAppOption(ImageMathCmd.outfile.outputfile ${masked_image})
+      SetAppOption(ImageMathCmd.type 1)
+      SetAppOption(ImageMathCmd.type.giveType 'float')
+  If( ${step} < 6 )
+    run( output ${Cmd} )
+    echo( ${output} )
+  EndIf( ${step} < 6 )
+  set ( CaseImg ${masked_image} )
+  set ( CaseImg_TAG ${Case}${RIGID_REGISTRATION_IMAGE_TAG}_masked${i})
+Else( ${i} != 0 )
+  Set (CaseImg ${tempDir}/${Case}/${Case}${RIGID_REGISTRATION_IMAGE_TAG}.nii.gz)
+  set (CaseImg_TAG ${Case}${RIGID_REGISTRATION_IMAGE_TAG})
+EndIf( ${i} != 0 )
+
+### rescaling
+set( CaseImg_rescaled ${tempDir}/${Case}/${CaseImg_TAG}_rescaled.nii.gz )
+set( IM_Cmd ${ImageMath} ${CaseImg} -rescale 0,10000 -type float -outfile ${CaseImg_rescaled} )
+      SetApp(ImageMathCmd @ImageMath)
+      SetAppOption(ImageMathCmd.infile ${CaseImg})
+      SetAppOption(ImageMathCmd.rescale 1)
+      SetAppOption(ImageMathCmd.rescale.rescale '0,10000')
+      SetAppOption(ImageMathCmd.outfile 1)
+      SetAppOption(ImageMathCmd.outfile.outputfile ${CaseImg_rescaled})
+      SetAppOption(ImageMathCmd.type 1)
+      SetAppOption(ImageMathCmd.type.giveType 'float')
+echo(${IM_Cmd})
+
+If( ${step} < 7 )
+  run( output ${IM_Cmd} )
+  echo( ${output} )
+EndIf( ${step} < 7 )
+
+#############################################################
+#histogram match
+#############################################################
+Set( TemplateFile_hm ${tempDir}/${Case}/${TemplateFile_TAG}_hm.nii.gz )
+Set( IMCmd ImageMath ${TemplateFile} -matchHistogram ${CaseImg_rescaled} -outfile ${TemplateFile_hm} -type float )
+      SetApp(IMCmd @ImageMath)
+      SetAppOption(IMCmd.infile ${CaseImg})
+      SetAppOption(IMCmd.matchHistogram 1)
+      SetAppOption(IMCmd.matchHistogram.matchHistogram ${CaseImg_rescaled})
+      SetAppOption(IMCmd.outfile 1)
+      SetAppOption(IMCmd.outfile.outputfile ${TemplateFile_hm})
+      SetAppOption(IMCmd.type 1)
+      SetAppOption(IMCmd.type.giveType 'float')
+
+If( ${step} < 8 )
+  Run( output ${IMCmd} )
+  Echo( ${output} )
+EndIf( ${step} < 8 )
+
+##############################################
+# alignment of TemplateFile and SrcFile : init transform
+##############################################
+
+  #####Uses RI for an initialization and saves transform#############
+set( INIT_TRANSFORM ${tempDir}/${Case}/Init_transform.txt )
+set( RegCmd ${RegisterImages} --initialization CentersOfMass --registration Initial ${CaseImg_rescaled} ${TemplateFile_hm} --saveTransform ${INIT_TRANSFORM})
+      SetApp(registerImages @RegisterImages)
+      SetAppOption(RegCmd.initialization 1)
+      SetAppOption(RegCmd.initialization.initialization 'CentersOfMass')
+      SetAppOption(RegCmd.registration 1)
+      SetAppOption(RegCmd.registration.registration 'Initial')
+      SetAppOption(RegCmd.fixedImage ${CaseImg_rescaled})
+      SetAppOption(RegCmd.movingImage ${TemplateFile_hm})
+      SetAppOption(RegCmd.saveTransform 1)
+      SetAppOption(RegCmd.saveTransform.saveTransform ${INIT_TRANSFORM})
+
+echo( ${RegCmd} )
+if (${step} < 8)
+  run( output ${RegCmd} )
+  echo( ${output} )
+endif (${step} < 8)
+
+  #####ITKTransformTools#####################
+set ( Grid ${tempDir}/${Case}/Grid.nrrd )
+#creating grid with the moving image
+set ( ITKTTCmd ${ITKTransformTools} size ${TemplateFile_hm} ${INIT_TRANSFORM} --grid ${Grid} )
+      SetApp(ITKTTCmd @ITKTransformTools)
+      SetAppOption(ITKTTCmd.size 1)
+      SetAppOption(ITKTTCmd.size.sizeInputImage ${TemplateFile_hm})
+      SetAppOption(ITKTTCmd.size.sizeInitTransform ${INIT_TRANSFORM})
+      SetAppOption(ITKTTCmd.grid 1)
+      SetAppOption(ITKTTCmd.grid.sizeGridFile ${Grid})
+
+echo( ${ITKTTCmd} )
+if (${step} < 9)
+  run( output ${ITKTTCmd} )
+  echo( ${output} )
+endif (${step} < 9)
+
+  #####ResampleVolume2#####################
+#applying transform to the moving image
+set ( DstImg_TAG ${TemplateFile_TAG}_Initialized )
+set ( DstImg ${tempDir}/${Case}/${DstImg_TAG}.nrrd ) 
+
+set ( RV2Cmd ${ResampleVolume2} -f ${INIT_TRANSFORM} -i nn -R ${Grid} ${TemplateFile_hm} ${DstImg})
+      SetApp(RV2Cmd @ResampleVolume2)
+      SetAppOption(RV2Cmd.transformationFile 1)
+      SetAppOption(RV2Cmd.transformationFile.transformationFile ${INIT_TRANSFORM})
+      SetAppOption(RV2Cmd.interpolationType 1)
+      SetAppOption(RV2Cmd.interpolationType.interpolationType 'nn')
+      SetAppOption(RV2Cmd.referenceVolume 1)
+      SetAppOption(RV2Cmd.referenceVolume.referenceVolume ${Grid})
+      SetAppOption(RV2Cmd.inputVolume ${TemplateFile_hm})
+      SetAppOption(RV2Cmd.outputVolume ${DstImg})
+
+echo( ${RV2Cmd} )
+if (${step} < 10)
+  run( output ${RV2Cmd} )
+  echo( ${output} )
+endif (${step} < 10)
+
+#############################################################
+#registration with ants
+#############################################################
+
+set ( RigidTransform  '' )
+Set ( SrcImg ${DstImg} )
+Set ( SrcImg_TAG ${DstImg_TAG})
+
+if( ${Rigid} == TRUE )
+  #############################################################
+  #rigid registration 
+  set( NII_FILE_PREFIX ${tempDir}/${Case}/${SrcImg_TAG}_to_${CaseImg_TAG} )
+  set( RIGID_TRANSFORM ${NII_FILE_PREFIX}Affine.txt )
+
+  #ants fixed moving
+  set ( AntsCmd ${ANTS} 3 -m MI[${CaseImg_rescaled}, ${SrcImg}, 1, 128] -i 0 --rigid-affine true -o ${NII_FILE_PREFIX} )
+  set(metricsCommandLine 'MI['${CaseImg_rescaled}', '${SrcImg}', 1, 128]')
+        SetApp(AntsCmd @ANTS)
+        SetAppOption(AntsCmd.dimension '3')
+        SetAppOption(AntsCmd.metrics 1)
+        SetAppOption(AntsCmd.metrics.metricsCommand ${metricsCommandLine})
+        SetAppOption(AntsCmd.iteration 1)
+        SetAppOption(AntsCmd.iteration.ivalue 0)
+        SetAppOption(AntsCmd.rigid-affine 1)
+        SetAppOption(AntsCmd.rigid-affine.rigid-affine 'true')
+        SetAppOption(AntsCmd.output 1)
+        SetAppOption(AntsCmd.output.outputfile ${NII_FILE_PREFIX})  
+
+  echo (${AntsCmd})
+  If( ${step} < 11 )
+    Run (output ${AntsCmd})
+    Echo (${output})
+  EndIf( ${step} < 11 )
+
+  Set ( SrcImg ${DstImg} )
+  Set( DstImg ${tempDir}/${Case}/${SrcImg_TAG}_rigid${i}.nii.gz )
+  Set ( RIGID_TRANSFORM_ITKTT ${NII_FILE_PREFIX}Rigid_ITKTT.txt )
+
+  Set ( ITKTTCmd ${ITKTransformTools} MO2Aff ${RIGID_TRANSFORM} ${RIGID_TRANSFORM_ITKTT})
+      SetApp(ITKTTCmd @ITKTransformTools)
+      SetAppOption(ITKTTCmd.MO2Aff 1)
+      SetAppOption(ITKTTCmd.MO2Aff.MO2AffInputTransform ${RIGID_TRANSFORM})
+      SetAppOption(ITKTTCmd.MO2Aff.MO2AffOutputTransform ${RIGID_TRANSFORM_ITKTT})
+  Echo (${ITKTTCmd})
+  If( ${step} < 12 )
+    Run (output ${ITKTTCmd})
+    Echo (${output})
+  EndIf( ${step} < 12 )
+
+  Set (RV2Cmd ${ResampleVolume2} -f ${RIGID_TRANSFORM_ITKTT} -R ${CaseImg} ${SrcImg} ${DstImg} )
+      SetApp(RV2Cmd @ResampleVolume2)
+      SetAppOption(RV2Cmd.transformationFile 1)
+      SetAppOption(RV2Cmd.transformationFile.transformationFile ${RIGID_TRANSFORM_ITKTT})
+      SetAppOption(RV2Cmd.referenceVolume 1)
+      SetAppOption(RV2Cmd.referenceVolume.referenceVolume ${CaseImg})
+      SetAppOption(RV2Cmd.inputVolume ${SrcImg})
+      SetAppOption(RV2Cmd.outputVolume ${DstImg})
+  echo (${RV2Cmd})
+  If( ${step} < 12 )
+    Run (output ${RV2Cmd})
+    Echo (${output})
+  EndIf( ${step} < 12 )
+
+  set ( RigidTransform  ${RIGID_TRANSFORM_ITKTT} )
+  set ( SrcImg ${DstImg} ) 
+  set ( SrcImg_TAG ${SrcImg_TAG}_rigid${i} )
+
+Endif( ${Rigid} == TRUE )
+
+#############################################################
+#affine registration of DstImg with TemplateFile
+#############################################################
+set( NII_FILE_PREFIX ${tempDir}/${Case}/${SrcImg_TAG}_to_${CaseImg_TAG} )
+set( AFFINE_TRANSFORM ${NII_FILE_PREFIX}Affine.txt )
+
+set ( AntsCmd ${ANTS} 3 -m MI[${CaseImg}, ${SrcImg}, 1, 128] -i 0 -o ${NII_FILE_PREFIX})
+  set(metricsCommandLine 'MI['${CaseImg}', '${SrcImg}', 1, 128]')
+        SetApp(AntsCmd @ANTS)
+        SetAppOption(AntsCmd.dimension '3')
+        SetAppOption(AntsCmd.metrics 1)
+        SetAppOption(AntsCmd.metrics.metricsCommand ${metricsCommandLine})
+        SetAppOption(AntsCmd.iteration 1)
+        SetAppOption(AntsCmd.iteration.ivalue 0)
+        SetAppOption(AntsCmd.output 1)
+        SetAppOption(AntsCmd.output.outputfile ${NII_FILE_PREFIX})  
+
+Echo (${AntsCmd})
+If( ${step} < 13 )
+  Run (output ${AntsCmd})
+  Echo (${output})
+EndIf( ${step} < 13 )
+
+Set ( AFFINE_TRANSFORM_ITKTT ${NII_FILE_PREFIX}Affine_ITKTT.txt )
+
+Set ( ITKTTCmd ${ITKTransformTools} MO2Aff ${AFFINE_TRANSFORM} ${AFFINE_TRANSFORM_ITKTT})  
+      SetApp(ITKTTCmd @ITKTransformTools)
+      SetAppOption(ITKTTCmd.MO2Aff 1)
+      SetAppOption(ITKTTCmd.MO2Aff.MO2AffInputTransform ${AFFINE_TRANSFORM})
+      SetAppOption(ITKTTCmd.MO2Aff.MO2AffOutputTransform ${AFFINE_TRANSFORM_ITKTT})
+Echo (${ITKTTCmd})
+If( ${step} < 13 )
+  Run (output ${ITKTTCmd})
+  Echo (${output})
+EndIf( ${step} < 13 )
+
+#############################################################
+#fusion of the 3 transforms
+#############################################################
+set ( GLOBAL_TRANSFORM ${tempDir}/${Case}/Global.txt )
+
+set ( FusionCmd ${ITKTransformTools} combine ${INIT_TRANSFORM} ${RigidTransform} ${AFFINE_TRANSFORM_ITKTT} -o ${GLOBAL_TRANSFORM})
+      SetApp(FusionCmd @ITKTransformTools)
+      SetAppOption(FusionCmd.combine 1)
+      SetAppOption(FusionCmd.combine.combineInitTransform ${AFFINE_TRANSFORM})
+      SetAppOption(FusionCmd.combine.combineRigidTransform ${AFFINE_TRANSFORM_ITKTT})
+      SetAppOption(FusionCmd.combine.combineAffineTransform ${AFFINE_TRANSFORM_ITKTT})
+      SetAppOption(FusionCmd.combineOutput 1)
+      SetAppOption(FusionCmd.combineOutput.combineOutput ${GLOBAL_TRANSFORM})
+
+Echo (${FusionCmd})
+If( ${step} < 14 )
+  Run (output ${FusionCmd})
+  Echo (${output})
+EndIf( ${step} < 14 )
+
+#############################################################
+#applying global transform to proba maps
+#############################################################
+
+ForEach( Type ${ATLAS_TAG} )
+  If( ${IS_SCALED} == TRUE )
+    Set ( image ${tempDir}/${Case}/${Type}.nii.gz )
+  Else( ${IS_SCALED} == TRUE )
+    Set ( image ${tempDir}/${Type}.nii.gz )
+  EndIf( ${IS_SCALED} == TRUE )
+
+  Set( DstImg ${ABC_Case_DIR}/${Type}.mha )
+
+  Set (RV2Cmd ${ResampleVolume2} -f ${GLOBAL_TRANSFORM} -i nn -R ${CaseImg} ${image} ${DstImg} )
+      SetApp(RV2Cmd @ResampleVolume2)
+      SetAppOption(RV2Cmd.transformationFile 1)
+      SetAppOption(RV2Cmd.transformationFile.transformationFile ${GLOBAL_TRANSFORM})
+      SetAppOption(RV2Cmd.referenceVolume 1)
+      SetAppOption(RV2Cmd.referenceVolume.referenceVolume ${CaseImg})
+      SetAppOption(RV2Cmd.inputVolume ${image})
+      SetAppOption(RV2Cmd.outputVolume ${DstImg})
+
+  Echo (${RV2Cmd})
+  If( ${step} < 16 )
+    Run (output ${RV2Cmd})
+    Echo (${output})
+  EndIf( ${step} < 16 )
+
+EndForEach( Type ATLAS_TAG )

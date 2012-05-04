@@ -17,89 +17,15 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 =========================================================================*/
+require_once BASE_PATH . '/modules/rodent/AppController.php';
 /** as controller*/
 class Rodent_AsController extends Rodent_AppController
 {
   public $_models = array('Item', 'Bitstream', 'ItemRevision', 'Assetstore', 'Folder');
   public $_components = array('Export');
-//  public $_moduleComponents = array('Executable', 'Job');
-//  public $_moduleModels = array('Job');
 
   protected $pipelinePrefix = "rodent_atlassegmentation_";
   
-  
-  
-  protected function exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $itemsForExport)
-    {
-    $itemIds = array();
-    foreach($itemsForExport as $configParam => $itemId)
-      {
-      $itemIds[] = $itemId;
-      }
-      
-    // export the items to the work dir data dir
-    $datapath = $taskDao->getWorkDir() . '/' . 'data';
-    if(!KWUtils::mkDir($datapath))
-      {
-      throw new Zend_Exception("couldn't create data export dir: ". $datapath);
-      }
-    $symlink = true;
-    $this->Component->Export->exportBitstreams($userDao, $datapath, $itemIds, $symlink);
-
-    // for each of these items, generate a path that points to a single bitstream
-    
-    // get the bitstream path, assuming latest revision of item, with one bitstream
-    // this seems somewhat wrong, as we are halfway recreating the export
-    // and dependent upon the export to work in a certain way for this to work
-    $modelLoad = new MIDAS_ModelLoader();
-    $itemModel = $modelLoad->loadModel('Item');
-   
-    $configParamsToBitstreamPaths = array();
-    foreach($itemsForExport as $configParam => $itemId)
-      {
-      $itemDao = $itemModel->load($itemId);
-      if($itemDao)
-        {
-        $revisionDao = $itemModel->getLastRevision($itemDao);
-        $bitstreamDaos = $revisionDao->getBitstreams();
-        if(empty($bitstreamDaos))
-          {
-          throw new Zend_Exception("Item ".$itemId." had no bitstreams.");
-          }
-        $imageBitstreamDao = $bitstreamDaos[0];
-        $exportedBitstreamPath = $datapath . '/' . $itemId . '/' . $imageBitstreamDao->getName();
-        $configParamsToBitstreamPaths[$configParam] = $exportedBitstreamPath;
-        }
-      else 
-        {
-        $configParamsToBitstreamPaths[$configParam] = "";
-        }
-      }
-    return $configParamsToBitstreamPaths;
-    }
-  
-  
-  protected function exportItemsToWorkDataDir($userDao, $taskDao, $itemIds)
-    {
-    // export the items to the work dir data dir
-    $datapath = $taskDao->getWorkDir() . '/' . 'data';
-    if(!KWUtils::mkDir($datapath))
-      {
-      throw new Zend_Exception("couldn't create data export dir: ". $datapath);
-      }
-    //$componentLoader = new MIDAS_ComponentLoader();
-    //$exportComponent = $this->$componentLoader->loadComponent('Export');
-    $symlink = true;
-    $this->Component->Export->exportBitstreams($userDao, $datapath, $itemIds, $symlink);
-    }
-  
-  
-  
-  
-  
-  
-  
-
   /** init a job*/
   function initAction()
     {
@@ -145,6 +71,7 @@ class Rodent_AsController extends Rodent_AppController
     $userDao = $this->userSession->Dao;
     $componentLoader = new MIDAS_ComponentLoader();
     $kwbatchmakeComponent = $componentLoader->loadComponent('KWBatchmake', 'batchmake');
+    $executeComponent = $componentLoader->loadComponent('Execute', 'rodent');
     $taskDao = $kwbatchmakeComponent->createTask($userDao);
     
     // export any data needed by the pipeline from midas
@@ -179,7 +106,7 @@ class Rodent_AsController extends Rodent_AppController
         }
       }
     
-    $configParamsToBitstreamPaths = $this->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $singleBitstreamItemIds);
+    $configParamsToBitstreamPaths = $executeComponent->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $singleBitstreamItemIds);
 
     // replace any exported item config params with their path values
     foreach($configParamsToBitstreamPaths as $configInput => $bitstreamPath) 
@@ -198,7 +125,19 @@ class Rodent_AsController extends Rodent_AppController
     $outputFolderId = $outputFolderDao->getKey();
     // set the newly created child folder id   
     $configInputs['outputdirectory'] = $outputFolderId;
+
+
     
+        
+    $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/py/as_condor_postscript.py';
+    $configScriptStem = "as";
+    $bmScript = "as.pipeline.bms";
+    $executeComponent->executeScript($taskDao, $userDao, $condorPostScriptPath, $configScriptStem, $bmScript, $configInputs);
+
+    
+//    executeScript($taskDao, $userDao, $condorPostScriptPath, $configScriptStem, $bmScript, $configInputs)
+// -->>>>>>    $taskDao, $userDao, condorPostScriptPath, $configScriptStem,$bmScript,$configInputs
+    /*
     // generate and export midas client communication params
     $executeComponent = $componentLoader->loadComponent('Execute', 'rodent');
     $executeComponent->generatePythonConfigParams($taskDao, $userDao);      
@@ -218,80 +157,7 @@ class Rodent_AsController extends Rodent_AppController
     $kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
     $dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
     $kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
-    
-    
-
-    
-/*    $bmScript = "unu.bms";
-    $kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
-    $kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
-    $kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
-    $dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
-    $kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
 */
-    
-    
-    
-    
-    // todo export the input
-    // can either do it here or pass down enough info to do it in a python script
-    
-    
-     // outputdirectory
-      
-// $rest = substr("abcdef", -3, 1);  
-    //echo JsonComponent::encode($taskDao);
-        //$this->view->json['inputParams'] = $inputParams;
-  
-/*  
-  $inputItemId = $this->_getParam("inputItemId");
-  $outputFolderId = $this->_getParam("outputFolderId");
-  $aValue = $this->_getParam("aValue");
-  $pValue = $this->_getParam("pValue");
-
-
-  
-  // export the input item
-  $itemIds = array($inputItemId);
-  $this->exportItemsToWorkDataDir($userDao, $taskDao, $itemIds);
-
-
-        
-  $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/unu_condor_postscript.py';
-  $configScriptStem = "unu";
-  
-  // get the bitstream path, assuming latest revision of item, one bitstream in item
-  // don't really like this, halfway recreating the export, and dependent upon
-  // the export to work in a certain way for this to work
-  $datapath = $taskDao->getWorkDir() . 'data/';
-  $modelLoad = new MIDAS_ModelLoader();
-  $itemModel = $modelLoad->loadModel('Item');
-  $itemDao = $itemModel->load($inputItemId);
-  $revisionDao = $itemModel->getLastRevision($itemDao);
-  $bitstreamDaos = $revisionDao->getBitstreams();
-  if(empty($bitstreamDaos))
-    {
-    throw new Zend_Exception("This item had no bitstreams.");
-    }
-  $imageBitstreamDao = $bitstreamDaos[0];
-  $exportedBitstreamPath = $datapath . $inputItemId . '/' . $imageBitstreamDao->getName();
-  
-  $appTaskConfigProperties = array();
-  $appTaskConfigProperties['cfg_inputImagePath'] = $exportedBitstreamPath;
-  $appTaskConfigProperties['cfg_outputFolderId'] = $outputFolderId;
-  $appTaskConfigProperties['cfg_aValue'] = $aValue;
-  $appTaskConfigProperties['cfg_pValue'] = $pValue;
-
-  $executeComponent->generateBatchmakeConfig($taskDao, $appTaskConfigProperties, $condorPostScriptPath, $configScriptStem);
-  
-  $bmScript = "unu.bms";
-  $kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
-  $kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
-  $kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
-  $dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
-  $kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
-
-  */
   }
     
   

@@ -124,8 +124,8 @@ midas.rodent.as.onShowStepCallback = function(obj)
     $.each( folders , function(k, v){
       var id = prefix + k;
       $('#'+id+'_button').click(function(){
-          loadDialog("selectfolder_outputfolder","/browse/selectfolder");
-          showDialog('Browse for Output Directory');
+          midas.loadDialog("selectfolder_outputfolder","/browse/selectfolder");
+          midas.showDialog('Browse for Output Directory');
           currentBrowser = id;
       });
     }); 
@@ -137,9 +137,9 @@ midas.rodent.as.onShowStepCallback = function(obj)
     $.each( items , function(k, v){
       var id = prefix + k;
       $('#'+id+'_button').click(function(){
-          loadDialog("selectitem_inputitem","/browse/selectitem");
+          midas.loadDialog("selectitem_inputitem","/browse/selectitem");
           var label = json.itemLabels[k];
-          showDialog('Browse for '+label);
+          midas.showDialog('Browse for '+label);
           currentBrowser = id;
       });
     }); 
