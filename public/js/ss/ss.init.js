@@ -48,8 +48,7 @@ midas.rodent.ss.onFinishCallback = function()
   {
    if(midas.rodent.ss.validateAllSteps())
      {
-     requestData = {};
-     
+     var requestData = {};
      var prefix = json.inputs.prefix;
      var cases_class = prefix+'casefolder';
      $.each($("."+cases_class), function(index, input) {
@@ -158,7 +157,7 @@ midas.rodent.ss.onShowStepCallback = function(obj)
     $('#'+id+'_button').click(function(){
         midas.loadDialog("selectfolder_outputfolder","/browse/selectfolder");
         midas.showDialog('Browse for Cases folder');
-        currentBrowser = id;
+        midas.rodent.ss.currentBrowser = id;
     });
     
     }
@@ -171,7 +170,7 @@ midas.rodent.ss.onShowStepCallback = function(obj)
       $('#'+id+'_button').click(function(){
           midas.loadDialog("selectitem_inputitem","/browse/selectitem");
           midas.showDialog('Browse');
-          currentBrowser = id;
+          midas.rodent.ss.currentBrowser = id;
       });
     }); 
     }
@@ -184,16 +183,16 @@ midas.rodent.ss.onShowStepCallback = function(obj)
 
 itemSelectionCallback = function(name, id)
   {
-  $('#'+currentBrowser+'_name').html(name);
-  $('#'+currentBrowser).val(id);
+  $('#'+midas.rodent.ss.currentBrowser+'_name').html(name);
+  $('#'+midas.rodent.ss.currentBrowser).val(id);
   return;
   }
 
 folderSelectionCallback = function(folder_name, folder_id)
   {
-  $('#'+currentBrowser+'_name').html(folder_name);
-  $('#'+currentBrowser).val(folder_id);
-  var callBack = midas.rodent.ss.selectionCallbacks[currentBrowser];
+  $('#'+midas.rodent.ss.currentBrowser+'_name').html(folder_name);
+  $('#'+midas.rodent.ss.currentBrowser).val(folder_id);
+  var callBack = midas.rodent.ss.selectionCallbacks[midas.rodent.ss.currentBrowser];
   callBack(folder_id);
   return;
   }
