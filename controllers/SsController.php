@@ -17,78 +17,71 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 =========================================================================*/
+require_once BASE_PATH . '/modules/rodent/AppController.php';
 /** as controller*/
 class Rodent_SsController extends Rodent_AppController
 {
   public $_models = array('Item', 'Bitstream', 'ItemRevision', 'Assetstore', 'Folder');
   public $_components = array('Export');
-// public $_moduleComponents = array('Executable', 'Job');
-// public $_moduleModels = array('Job');
 
   protected $pipelinePrefix = "rodent_skullstrip_";
   
-  
-  
-  protected function exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $itemsForExport)
-    {
-    $itemIds = array();
-    foreach($itemsForExport as $configParam => $itemId)
-      {
-      $itemIds[] = $itemId;
-      }
-      
-    // export the items to the work dir data dir
-    $datapath = $taskDao->getWorkDir() . '/' . 'data';
-    if(!KWUtils::mkDir($datapath))
-      {
-      throw new Zend_Exception("couldn't create data export dir: ". $datapath);
-      }
-    $symlink = true;
-    $this->Component->Export->exportBitstreams($userDao, $datapath, $itemIds, $symlink);
-
-    // for each of these items, generate a path that points to a single bitstream
     
-    // get the bitstream path, assuming latest revision of item, with one bitstream
-    // this seems somewhat wrong, as we are halfway recreating the export
-    // and dependent upon the export to work in a certain way for this to work
-    $modelLoad = new MIDAS_ModelLoader();
-    $itemModel = $modelLoad->loadModel('Item');
-   
-    $configParamsToBitstreamPaths = array();
-    foreach($itemsForExport as $configParam => $itemId)
-      {
-      $itemDao = $itemModel->load($itemId);
-      $revisionDao = $itemModel->getLastRevision($itemDao);
-      $bitstreamDaos = $revisionDao->getBitstreams();
-      if(empty($bitstreamDaos))
-        {
-        throw new Zend_Exception("Item ".$itemId." had no bitstreams.");
-        }
-      $imageBitstreamDao = $bitstreamDaos[0];
-      $exportedBitstreamPath = $datapath . '/' . $itemId . '/' . $imageBitstreamDao->getName();
-      $configParamsToBitstreamPaths[$configParam] = $exportedBitstreamPath;
-      }
-    return $configParamsToBitstreamPaths;
-    }
-  
-  
-  protected function exportItemsToWorkDataDir($userDao, $taskDao, $itemIds)
+  protected function exportCases($userDao, $taskDao, &$configInputs, $caseFolders, $suffix)
     {
-    // export the items to the work dir data dir
-    $datapath = $taskDao->getWorkDir() . '/' . 'data';
-    if(!KWUtils::mkDir($datapath))
+    $modelLoad = new MIDAS_ModelLoader();
+    $folderModel = $modelLoad->loadModel('Folder');
+    // in each folder, look for an item matching folder+suffix
+    $cases = array();
+    $itemsForExport = array();
+    foreach($caseFolders as $folderId)
       {
-      throw new Zend_Exception("couldn't create data export dir: ". $datapath);
+      $folder = $folderModel->load($folderId);
+      $caseName = $folder->getName();
+      $cases[] = $caseName;
+      $soughtItem = $caseName . $suffix;
+//TODO some different error checking/exceptions if don't have write access
+//TODO yuck this looking for folder names is brittle, better would be metadata
+      $folders = $folderModel->getChildrenFoldersFiltered($folder, $userDao, MIDAS_POLICY_WRITE);
+      foreach($folders as $folder)
+        {
+        if($folder->getName() === "2-Registration")
+          {
+          $items = $folderModel->getItemsFiltered($folder, $userDao, MIDAS_POLICY_WRITE);
+          foreach($items as $item)
+            {
+            if($item->getName() === $soughtItem)
+              {
+              $itemsForExport[$caseName] = $item->getItemId();  
+              }
+            }      
+          }
+        }
       }
-    //$componentLoader = new MIDAS_ComponentLoader();
-    //$exportComponent = $this->$componentLoader->loadComponent('Export');
-    $symlink = true;
-    $this->Component->Export->exportBitstreams($userDao, $datapath, $itemIds, $symlink);
+    
+    $componentLoader = new MIDAS_ComponentLoader();
+    $executeComponent = $componentLoader->loadComponent('Execute', 'rodent');
+    
+    $casesToExportPaths = $executeComponent->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $itemsForExport);
+    $caseInputs = array();
+    $caseIndices = array();
+    $caseInd = 0;
+    foreach($cases as $case)
+      {
+      $caseInputs[] = $casesToExportPaths[$case];  
+      $caseIndices[] = $caseInd++;
+      }
+    // create configInputs
+    // a list of cases
+    // a list of paths to the cases data
+    // a list of case folders
+    // a case index for each case
+    $configInputs['cases'] = $cases;
+    $configInputs['casesInputs'] = $caseInputs;
+    $configInputs['caseFolderIds'] = $caseFolders;
+    $configInputs['caseInds'] = $caseIndices;
     }
-  
-  
-  
-  
+
   
   
   
@@ -105,31 +98,28 @@ class Rodent_SsController extends Rodent_AppController
     $this->requireAdminPrivileges();
     
     
-    $folderSelections = array("outputdirectory" => "Output Directory",
+    $folderSelections = array(//"outputdirectory" => "Output Directory",
         "casesdirectory" => "Cases Directory");
+       // "rregdir" => "Directory in which rreg files are");
         //"externalatlasandprobmapdirectory" => "External atlas and probability map directory"
  
-    $itemSelections = array("maskfromsegmentation" => "Mask from segmentation",
-        "templatefiles" => "Template file",
-        "templategridfile" => "Template grid file",
-        "probabilitymaps" => "Probability maps",
-        "rreg param file" => "rreg parameter files");
+    $itemSelections = array("rregfiles" => "Rreg files",
+        "templatefiles" => "Template files",
+        "templategridfile" => "Template grid file");
     
-    $parameters = array(
-	"rigid" => array("type" => "boolean", "label" => "Using rigid transformation?"),
-        "registration" => array("type" => "boolean", "label" => "Do registration?"),
+    $parameters = array("newmasktag" => array("type" => "text", "label" => "Tag of the mask that is gonna be created"),
+	"rigid" => array("type" => "boolean", "label" => "Using rigid transformation? (usually checked)"),
+        "registration" => array("type" => "boolean", "label" => "Do registration? (usually checked)"),
         "biasfieldcorrection" => array("type" => "boolean", "label" => "Use bias field correction?"),
         "rigidisFA" => array("type" => "boolean", "label" => "rigidisFA"),
         "scalar" => array("type" => "boolean", "label" => "Is the input scalar?"),
-        "scaled" => array("type" => "boolean", "label" => "Is the input scaled>"),
-        "filtercurvature" => array("type" => "boolean", "label" => "filtercurvature"),
-#        "regimageis" => array("type" => "select", "label" => "Type of the images used for registration", "options" => array("FA","MD","other")),
-        "segimagestype" => array("type" => "text", "label" => "Type of the images used for segmentation"),
-        "regimagessuffix" => array("type" => "text", "label" => "Suffix of the images used to register the input image to the template to compute segmentation"),
-        "radius" => array("type" => "integer", "label" => "radius"),
-        "abcpriors" => array("type" => "text", "label" => "abcpriors"),
+        "scaled" => array("type" => "boolean", "label" => "Is the input scaled?"),
+        "filtercurvature" => array("type" => "boolean", "label" => "filtercurvature? (usually checked)"),
+        "segimagestype" => array("type" => "text", "label" => "Suffix of the images used for segmentation (usually the same suffix given on folder window)"),
+        "radius" => array("type" => "integer", "label" => "radius (usually 5)"),
+        "abcpriors" => array("type" => "text", "label" => "abcpriors (usually 1 1 1 1)"),
         "rigidisMD" => array("type" => "boolean", "label" => "rigidisMD"),
-        "sequence" => array("type"=>"text", "label"=>"sequence 0 NB_LOOPS 1"));
+        "sequence" => array("type"=>"text", "label"=>"sequence 0 NB_LOOPS 1 (usually 0 0 1)"));
     
     $inputs = array("prefix" => $this->pipelinePrefix, "folders" => $folderSelections, "items" => $itemSelections, "parameters" => $parameters);
     $this->view->inputs = $inputs;
@@ -139,8 +129,8 @@ class Rodent_SsController extends Rodent_AppController
     }
 
   /**
-* start a unu job, via an ajax call.
-*/
+   * start an SS job, via an ajax call.
+   */
   public function startjobAction()
     {
     $this->disableLayout();
@@ -149,41 +139,71 @@ class Rodent_SsController extends Rodent_AppController
     // create a task
     $userDao = $this->userSession->Dao;
     $componentLoader = new MIDAS_ComponentLoader();
+    $executeComponent = $componentLoader->loadComponent('Execute', 'rodent');
     $kwbatchmakeComponent = $componentLoader->loadComponent('KWBatchmake', 'batchmake');
     $taskDao = $kwbatchmakeComponent->createTask($userDao);
     
     // export any data needed by the pipeline from midas
-    $singleBitstreamItemParams = array("maskfromsegmentation" => "Mask from segmentation",
+    $singleBitstreamItemParams = array("rregfiles" => "Rreg files",
         "templatefiles" => "Template files",
-        "templategridfiles" => "Template grid file",
-        "probabilitymaps" => "Probability maps",
-        "rreg param file" => "rreg parameter files");
+        "templategridfiles" => "Template grid file");
     
     $singleBitstreamItemIds = array();
 
-    // TODO need to keep cleaning up these exports, just working through params one at a time
-    // as we develop the pipeline
-    
-    // first step is all items that have only one bitstream
+    // process the input params
     $inputParams = $this->_getAllParams();
     $configInputs = array();
     $substrInd = strlen($this->pipelinePrefix);
+    $caseFolderPrefix = $this->pipelinePrefix . "casefolder_";
+    $caseFolderSuffix = $this->pipelinePrefix . "suffix";
+    $caseFolderSubstrInd = strlen($caseFolderPrefix);
+    $caseFolders = array();
     foreach($inputParams as $inputParam => $value)
       {
       if(strpos($inputParam, $this->pipelinePrefix) === 0)
         {
-        // collect all config inputs
-        $configInputs[substr($inputParam, $substrInd)] = $value;
-        // find the items needed to export
-        $paramName = substr($inputParam, $substrInd);
-        if(array_key_exists($paramName, $singleBitstreamItemParams))
+        if(strpos($inputParam, $caseFolderPrefix) === 0)
           {
-          $singleBitstreamItemIds[$paramName] = $value;
+          // get the case folders by id
+          $folderId = substr($inputParam, $caseFolderSubstrInd);
+          $caseFolders[] = $folderId;
+          }
+        else if(strpos($inputParam, $caseFolderSuffix) === 0)
+          {
+          $suffix = $value;   
+          }
+        else
+          {
+          // upper case boolean values for BatchMake
+          // TODO should have a better handler for this
+          if($value === 'true')
+            {
+            $value = "TRUE";
+            }
+          if($value === 'false')
+            {
+            $value = "FALSE";
+            }
+
+
+
+          // collect all config inputs
+          $configInputs[substr($inputParam, $substrInd)] = $value;
+          // find the items needed to export
+          $paramName = substr($inputParam, $substrInd);
+          if(array_key_exists($paramName, $singleBitstreamItemParams))
+            {
+            $singleBitstreamItemIds[$paramName] = $value;
+            }
           }
         }
       }
-    
-    $configParamsToBitstreamPaths = $this->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $singleBitstreamItemIds);
+
+    // specific export for the cases chosen
+    $this->exportCases($userDao, $taskDao, $configInputs, $caseFolders, $suffix);  
+
+    // export remaining inputs  
+    $configParamsToBitstreamPaths = $executeComponent->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $singleBitstreamItemIds);
 
     // replace any exported item config params with their path values
     foreach($configParamsToBitstreamPaths as $configInput => $bitstreamPath)
@@ -191,7 +211,9 @@ class Rodent_SsController extends Rodent_AppController
       $configInputs[$configInput] = $bitstreamPath;
       }
     
-    
+/*
+ * ignoring this output for now, will want to upload back into each of the casess
+ *     
     // now that we have created a task, create a new folder for this task under
     // the outputFolder
     $outputFolderId = $configInputs["outputdirectory"];
@@ -200,94 +222,15 @@ class Rodent_SsController extends Rodent_AppController
     $outputFolderDao = $folderModel->createFolder('SS task ' . $taskDao->getKey() . ' Output', '', $outputFolderId);
     // now set the outputFolderId to be the newly created one
     $outputFolderId = $outputFolderDao->getKey();
+*/
     
-    // generate and export midas client communication params
-    $executeComponent = $componentLoader->loadComponent('Execute', 'rodent');
-    $executeComponent->generatePythonConfigParams($taskDao, $userDao);
-
+    
     
     $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/ss_condor_postscript.py';
     $configScriptStem = "ss";
-
-    $executeComponent->generateBatchmakeConfig($taskDao, $configInputs, $condorPostScriptPath, $configScriptStem);
-  
-    // export the batchmake scripts
     $bmScript = "ss1.pipeline.bms";
-    $kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
-    $kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
+    $executeComponent->executeScript($taskDao, $userDao, $condorPostScriptPath, $configScriptStem, $bmScript, $configInputs);
 
-    // generate and run the condor dag
-    $kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
-    $dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
-    $kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
-    
-    
-    
-/* $bmScript = "unu.bms";
-$kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
-$kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
-$kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
-$dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
-$kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
-*/
-    
-    
-    
-    
-    // todo export the input
-    // can either do it here or pass down enough info to do it in a python script
-    
-    
-     // outputdirectory
-      
-// $rest = substr("abcdef", -3, 1);
-    //echo JsonComponent::encode($taskDao);
-        //$this->view->json['inputParams'] = $inputParams;
-  
-/*
-$inputItemId = $this->_getParam("inputItemId");
-$outputFolderId = $this->_getParam("outputFolderId");
-$aValue = $this->_getParam("aValue");
-$pValue = $this->_getParam("pValue");
-
-
-// export the input item
-$itemIds = array($inputItemId);
-$this->exportItemsToWorkDataDir($userDao, $taskDao, $itemIds);
-
-
-$condorPostScriptPath = BASE_PATH . '/modules/rodent/library/unu_condor_postscript.py';
-$configScriptStem = "unu";
-// get the bitstream path, assuming latest revision of item, one bitstream in item
-// don't really like this, halfway recreating the export, and dependent upon
-// the export to work in a certain way for this to work
-$datapath = $taskDao->getWorkDir() . 'data/';
-$modelLoad = new MIDAS_ModelLoader();
-$itemModel = $modelLoad->loadModel('Item');
-$itemDao = $itemModel->load($inputItemId);
-$revisionDao = $itemModel->getLastRevision($itemDao);
-$bitstreamDaos = $revisionDao->getBitstreams();
-if(empty($bitstreamDaos))
-{
-throw new Zend_Exception("This item had no bitstreams.");
-}
-$imageBitstreamDao = $bitstreamDaos[0];
-$exportedBitstreamPath = $datapath . $inputItemId . '/' . $imageBitstreamDao->getName();
-$appTaskConfigProperties = array();
-$appTaskConfigProperties['cfg_inputImagePath'] = $exportedBitstreamPath;
-$appTaskConfigProperties['cfg_outputFolderId'] = $outputFolderId;
-$appTaskConfigProperties['cfg_aValue'] = $aValue;
-$appTaskConfigProperties['cfg_pValue'] = $pValue;
-
-$executeComponent->generateBatchmakeConfig($taskDao, $appTaskConfigProperties, $condorPostScriptPath, $configScriptStem);
-$bmScript = "unu.bms";
-$kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
-$kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
-$kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
-$dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
-$kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
-
-*/
   }
     
   
