@@ -100,29 +100,26 @@ class Rodent_SsController extends Rodent_AppController
     
     $folderSelections = array(//"outputdirectory" => "Output Directory",
         "casesdirectory" => "Cases Directory");
+       // "rregdir" => "Directory in which rreg files are");
         //"externalatlasandprobmapdirectory" => "External atlas and probability map directory"
  
-    $itemSelections = array("maskfromsegmentation" => "Mask from segmentation",
-        "templatefiles" => "Template file",
-        "templategridfile" => "Template grid file",
-        "probabilitymaps" => "Probability maps",
-        "rreg param file" => "rreg parameter files");
+    $itemSelections = array("rregfiles" => "Rreg files",
+        "templatefiles" => "Template files",
+        "templategridfile" => "Template grid file");
     
-    $parameters = array(
-	"rigid" => array("type" => "boolean", "label" => "Using rigid transformation?"),
-        "registration" => array("type" => "boolean", "label" => "Do registration?"),
+    $parameters = array("newmasktag" => array("type" => "text", "label" => "Tag of the mask that is gonna be created"),
+	"rigid" => array("type" => "boolean", "label" => "Using rigid transformation? (usually checked)"),
+        "registration" => array("type" => "boolean", "label" => "Do registration? (usually checked)"),
         "biasfieldcorrection" => array("type" => "boolean", "label" => "Use bias field correction?"),
         "rigidisFA" => array("type" => "boolean", "label" => "rigidisFA"),
         "scalar" => array("type" => "boolean", "label" => "Is the input scalar?"),
-        "scaled" => array("type" => "boolean", "label" => "Is the input scaled>"),
-        "filtercurvature" => array("type" => "boolean", "label" => "filtercurvature"),
-#        "regimageis" => array("type" => "select", "label" => "Type of the images used for registration", "options" => array("FA","MD","other")),
-        "segimagestype" => array("type" => "text", "label" => "Type of the images used for segmentation"),
-        "regimagessuffix" => array("type" => "text", "label" => "Suffix of the images used to register the input image to the template to compute segmentation"),
-        "radius" => array("type" => "integer", "label" => "radius"),
-        "abcpriors" => array("type" => "text", "label" => "abcpriors"),
+        "scaled" => array("type" => "boolean", "label" => "Is the input scaled?"),
+        "filtercurvature" => array("type" => "boolean", "label" => "filtercurvature? (usually checked)"),
+        "segimagestype" => array("type" => "text", "label" => "Suffix of the images used for segmentation (usually the same suffix given on folder window)"),
+        "radius" => array("type" => "integer", "label" => "radius (usually 5)"),
+        "abcpriors" => array("type" => "text", "label" => "abcpriors (usually 1 1 1 1)"),
         "rigidisMD" => array("type" => "boolean", "label" => "rigidisMD"),
-        "sequence" => array("type"=>"text", "label"=>"sequence 0 NB_LOOPS 1"));
+        "sequence" => array("type"=>"text", "label"=>"sequence 0 NB_LOOPS 1 (usually 0 0 1)"));
     
     $inputs = array("prefix" => $this->pipelinePrefix, "folders" => $folderSelections, "items" => $itemSelections, "parameters" => $parameters);
     $this->view->inputs = $inputs;
@@ -147,11 +144,9 @@ class Rodent_SsController extends Rodent_AppController
     $taskDao = $kwbatchmakeComponent->createTask($userDao);
     
     // export any data needed by the pipeline from midas
-    $singleBitstreamItemParams = array("maskfromsegmentation" => "Mask from segmentation",
+    $singleBitstreamItemParams = array("rregfiles" => "Rreg files",
         "templatefiles" => "Template files",
-        "templategridfiles" => "Template grid file",
-        "probabilitymaps" => "Probability maps",
-        "rreg param file" => "rreg parameter files");
+        "templategridfiles" => "Template grid file");
     
     $singleBitstreamItemIds = array();
 
@@ -179,6 +174,19 @@ class Rodent_SsController extends Rodent_AppController
           }
         else
           {
+          // upper case boolean values for BatchMake
+          // TODO should have a better handler for this
+          if($value === 'true')
+            {
+            $value = "TRUE";
+            }
+          if($value === 'false')
+            {
+            $value = "FALSE";
+            }
+
+
+
           // collect all config inputs
           $configInputs[substr($inputParam, $substrInd)] = $value;
           // find the items needed to export
