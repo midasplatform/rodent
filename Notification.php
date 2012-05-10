@@ -17,15 +17,21 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 =========================================================================*/
+require_once BASE_PATH . '/modules/api/library/APIEnabledNotification.php';
+
 /** notification manager*/
-class Rodent_Notification extends MIDAS_Notification
+class Rodent_Notification extends ApiEnabled_Notification
   {
-  public $_models=array('User');
+
+  public $moduleName = 'rodent';
+  public $_moduleComponents=array('Api', 'Execute');
 
   /** init notification process*/
   public function init()
     {
+    $this->enableWebAPI($this->moduleName);
     }//end init
+
 
   } //end class
 ?>

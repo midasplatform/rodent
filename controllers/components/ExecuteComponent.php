@@ -143,6 +143,84 @@ class Rodent_ExecuteComponent extends AppComponent
     $exportComponent->exportBitstreams($userDao, $datapath, $itemIds, $symlink);
     }
 
+  public function exportCases($userDao, $taskDao, &$configInputs, $caseFolders, $suffix, $selectedSubfolderName)
+    {
+    $modelLoad = new MIDAS_ModelLoader();
+    $folderModel = $modelLoad->loadModel('Folder');
+    // in each folder, look for an item matching folder+suffix
+    $cases = array();
+    $itemsForExport = array();
+    foreach($caseFolders as $folderId)
+      {
+      $folder = $folderModel->load($folderId);
+      $caseName = $folder->getName();
+      $cases[] = $caseName;
+      $soughtItem = $caseName . $suffix;
+//TODO some different error checking/exceptions if don't have write access
+//TODO yuck this looking for folder names is brittle, better would be metadata
+      $folders = $folderModel->getChildrenFoldersFiltered($folder, $userDao, MIDAS_POLICY_WRITE);
+      foreach($folders as $folder)
+        {
+        if($folder->getName() === $selectedSubfolderName)
+          {
+          $items = $folderModel->getItemsFiltered($folder, $userDao, MIDAS_POLICY_WRITE);
+          foreach($items as $item)
+            {
+            if($item->getName() === $soughtItem)
+              {
+              $itemsForExport[$caseName] = $item->getItemId();  
+              }
+            }      
+          }
+        }
+      }
+    
+    $casesToExportPaths = $this->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $itemsForExport);
+    $caseInputs = array();
+    $caseIndices = array();
+    $caseInd = 0;
+    foreach($cases as $case)
+      {
+      $caseInputs[] = $casesToExportPaths[$case];  
+      $caseIndices[] = $caseInd++;
+      }
+    // create configInputs
+    // a list of cases
+    // a list of paths to the cases data
+    // a list of case folders
+    // a case index for each case
+    $configInputs['cases'] = $cases;
+    $configInputs['casesInputs'] = $caseInputs;
+    $configInputs['caseFolderIds'] = $caseFolders;
+    $configInputs['caseInds'] = $caseIndices;
+    }
+
+    // specific export for the multiitems chosen
+    public function exportMultiitems($userDao, $taskDao, &$configInputs, $multiitems) 
+      {
+      $modelLoad = new MIDAS_ModelLoader();
+      $itemModel = $modelLoad->loadModel('Folder');
+      foreach($multiitems as $paramId => $items)
+        {
+        $itemsForExport = array();
+        foreach($items as $itemId)
+          {
+          $itemsForExport[$itemId] = $itemId;
+          }
+        $configInputs[$paramId] = array();
+        $itemIdsToExportPaths = $this->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $itemsForExport);
+        foreach($itemIdsToExportPaths as $itemId => $exportPath)
+          {
+          $configInputs[$paramId][] = $exportPath;
+          }
+        }
+      }
+//need to do something with multiitem
+//prefix_multiitem_id_itemid
+//            combine them into a multiitem, make the multiitem a list, export everything the in the list, export as prefix_id
+
+          
+    
 
   public function executeScript($taskDao, $userDao, $condorPostScriptPath, $configScriptStem, $bmScript, $configInputs)
     {

@@ -26,63 +26,11 @@ class Rodent_SsController extends Rodent_AppController
 
   protected $pipelinePrefix = "rodent_skullstrip_";
   
-    
-  protected function exportCases($userDao, $taskDao, &$configInputs, $caseFolders, $suffix)
-    {
-    $modelLoad = new MIDAS_ModelLoader();
-    $folderModel = $modelLoad->loadModel('Folder');
-    // in each folder, look for an item matching folder+suffix
-    $cases = array();
-    $itemsForExport = array();
-    foreach($caseFolders as $folderId)
-      {
-      $folder = $folderModel->load($folderId);
-      $caseName = $folder->getName();
-      $cases[] = $caseName;
-      $soughtItem = $caseName . $suffix;
-//TODO some different error checking/exceptions if don't have write access
-//TODO yuck this looking for folder names is brittle, better would be metadata
-      $folders = $folderModel->getChildrenFoldersFiltered($folder, $userDao, MIDAS_POLICY_WRITE);
-      foreach($folders as $folder)
-        {
-        if($folder->getName() === "2-Registration")
-          {
-          $items = $folderModel->getItemsFiltered($folder, $userDao, MIDAS_POLICY_WRITE);
-          foreach($items as $item)
-            {
-            if($item->getName() === $soughtItem)
-              {
-              $itemsForExport[$caseName] = $item->getItemId();  
-              }
-            }      
-          }
-        }
-      }
-    
-    $componentLoader = new MIDAS_ComponentLoader();
-    $executeComponent = $componentLoader->loadComponent('Execute', 'rodent');
-    
-    $casesToExportPaths = $executeComponent->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $itemsForExport);
-    $caseInputs = array();
-    $caseIndices = array();
-    $caseInd = 0;
-    foreach($cases as $case)
-      {
-      $caseInputs[] = $casesToExportPaths[$case];  
-      $caseIndices[] = $caseInd++;
-      }
-    // create configInputs
-    // a list of cases
-    // a list of paths to the cases data
-    // a list of case folders
-    // a case index for each case
-    $configInputs['cases'] = $cases;
-    $configInputs['casesInputs'] = $caseInputs;
-    $configInputs['caseFolderIds'] = $caseFolders;
-    $configInputs['caseInds'] = $caseIndices;
-    }
 
   
+  
+
+
   
   
 
@@ -98,15 +46,17 @@ class Rodent_SsController extends Rodent_AppController
     $this->requireAdminPrivileges();
     
     
-    $folderSelections = array(//"outputdirectory" => "Output Directory",
-        "casesdirectory" => "Cases Directory");
-       // "rregdir" => "Directory in which rreg files are");
-        //"externalatlasandprobmapdirectory" => "External atlas and probability map directory"
- 
-    $itemSelections = array("rregfiles" => "Rreg files",
+    $casesSelection = array('id'=> "casesdirectory", 'label' => "Select the Cases Directory");
+
+    $multiItemSelections = array("rregfiles" => "Rreg files",
+        "templatefiles" => "Template files");
+
+    $singleItemSelections = array("templategridfile" => array("label" => "Template grid file", "bitstreamCount" => "single"));
+    
+/*    $itemSelections = array("rregfiles" => "Rreg files",
         "templatefiles" => "Template files",
         "templategridfile" => "Template grid file");
-    
+*/    
     $parameters = array("newmasktag" => array("type" => "text", "label" => "Tag of the mask that is gonna be created"),
 	"rigid" => array("type" => "boolean", "label" => "Using rigid transformation? (usually checked)"),
         "registration" => array("type" => "boolean", "label" => "Do registration? (usually checked)"),
@@ -121,9 +71,33 @@ class Rodent_SsController extends Rodent_AppController
         "rigidisMD" => array("type" => "boolean", "label" => "rigidisMD"),
         "sequence" => array("type"=>"text", "label"=>"sequence 0 NB_LOOPS 1 (usually 0 0 1)"));
     
-    $inputs = array("prefix" => $this->pipelinePrefix, "folders" => $folderSelections, "items" => $itemSelections, "parameters" => $parameters);
+    $inputs = array("prefix" => $this->pipelinePrefix, "cases" => $casesSelection, "multiItems" => $multiItemSelections, "singleItems" => $singleItemSelections, "parameters" => $parameters);
+    //$inputs = array("prefix" => $this->pipelinePrefix, "folders" => $folderSelections, "items" => $itemSelections, "parameters" => $parameters);
+
+// can be pulled out into a method
+    $processSteps = array();
+    $processStepInd = 1;
+    if(array_key_exists("cases", $inputs)) {
+        $processSteps[$processStepInd++] = array('title'=>'Select Cases', 'type' => 'cases', 'id'=> "casesdirectory");
+    }
+    if(array_key_exists("multiItems", $inputs)) {
+        $multiItems = $inputs["multiItems"];
+        foreach($multiItems as $id => $title) {
+            $processSteps[$processStepInd++] = array('title' => $title, 'label'=>'Select '. $title, 'type' => 'multiItems', 'id' => $id);
+        }
+    }
+    if(array_key_exists("singleItems", $inputs)) {
+        $processSteps[$processStepInd++] = array('title'=>'Select Items', 'type' => 'singleItems');
+    }
+    if(array_key_exists("parameters", $inputs)) {
+        $processSteps[$processStepInd++] = array('title'=>'Select Parameters', 'type' => 'parameters');
+    }
+//
+    
+    $this->view->processSteps = $processSteps;
     $this->view->inputs = $inputs;
     $this->view->json['inputs'] = $inputs;
+    $this->view->json['processSteps'] = $processSteps;
     
     
     }
@@ -144,9 +118,7 @@ class Rodent_SsController extends Rodent_AppController
     $taskDao = $kwbatchmakeComponent->createTask($userDao);
     
     // export any data needed by the pipeline from midas
-    $singleBitstreamItemParams = array("rregfiles" => "Rreg files",
-        "templatefiles" => "Template files",
-        "templategridfiles" => "Template grid file");
+    $singleBitstreamItemParams = array("templategridfiles" => "Template grid file");
     
     $singleBitstreamItemIds = array();
 
@@ -155,9 +127,12 @@ class Rodent_SsController extends Rodent_AppController
     $configInputs = array();
     $substrInd = strlen($this->pipelinePrefix);
     $caseFolderPrefix = $this->pipelinePrefix . "casefolder_";
-    $caseFolderSuffix = $this->pipelinePrefix . "suffix";
+    $caseFolderSuffix = $this->pipelinePrefix . "case_suffix";
     $caseFolderSubstrInd = strlen($caseFolderPrefix);
+    $multiitemPrefix = $this->pipelinePrefix . "multiitem_";
+    $multiitemSubstrInd = strlen($multiitemPrefix);
     $caseFolders = array();
+    $multiitems = array();
     foreach($inputParams as $inputParam => $value)
       {
       if(strpos($inputParam, $this->pipelinePrefix) === 0)
@@ -170,7 +145,20 @@ class Rodent_SsController extends Rodent_AppController
           }
         else if(strpos($inputParam, $caseFolderSuffix) === 0)
           {
-          $suffix = $value;   
+          $caseSuffix = $value;   
+          }
+        else if(strpos($inputParam, $multiitemPrefix) === 0)
+          {
+          $paramIdAndItemId = substr($inputParam, $multiitemSubstrInd);
+          // find the last _, as id could have _ in it
+          $lastUnderscoreInd = strrpos($paramIdAndItemId, "_");
+          $itemId = substr($paramIdAndItemId, $lastUnderscoreInd+1);
+          $paramId = substr($paramIdAndItemId, 0, $lastUnderscoreInd);
+          if(!array_key_exists($paramId, $multiitems)) 
+            {
+            $multiitems[$paramId] = array();  
+            }
+          $multiitems[$paramId][] = $itemId;  
           }
         else
           {
@@ -185,8 +173,8 @@ class Rodent_SsController extends Rodent_AppController
             $value = "FALSE";
             }
 
-
-
+            
+            
           // collect all config inputs
           $configInputs[substr($inputParam, $substrInd)] = $value;
           // find the items needed to export
@@ -199,12 +187,27 @@ class Rodent_SsController extends Rodent_AppController
         }
       }
 
+   
+      
     // specific export for the cases chosen
-    $this->exportCases($userDao, $taskDao, $configInputs, $caseFolders, $suffix);  
+    $executeComponent->exportCases($userDao, $taskDao, $configInputs, $caseFolders, $caseSuffix, "2-Registration");  
 
+    // specific export for the multiitems chosen
+    $executeComponent->exportMultiitems($userDao, $taskDao, $configInputs, $multiitems);  
+//need to do something with multiitem
+//prefix_multiitem_id_itemid
+//            combine them into a multiitem, make the multiitem a list, export everything the in the list, export as prefix_id
+
+    
+    
     // export remaining inputs  
     $configParamsToBitstreamPaths = $executeComponent->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $singleBitstreamItemIds);
 
+    
+                
+
+    
+    
     // replace any exported item config params with their path values
     foreach($configParamsToBitstreamPaths as $configInput => $bitstreamPath)
       {
