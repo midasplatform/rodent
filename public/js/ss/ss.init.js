@@ -56,6 +56,12 @@ midas.rodent.ss.onFinishCallback = function()
              requestData[input.id] = input.checked; 
          }
      });
+     var multiitem_class = prefix+'multiitem';
+     $.each($("."+multiitem_class), function(index, input) {
+         if(input.checked) {
+             requestData[input.id] = input.checked; 
+         }
+     });
      var suffix = prefix+'suffix';
      requestData[suffix] = $('#'+suffix).val();
      $.each($(".pipelineparameter"), function(index, input) {
@@ -116,16 +122,68 @@ midas.rodent.ss.validateAllSteps = function()
          midas.rodent.ss.validateSteps(4);
   }
 
-midas.rodent.ss.onShowStepCallback = function(obj)
-  {
-  var step_num = obj.attr('rel'); // get the current step number
-  if(step_num == 1)
-    {
+midas.rodent.ss.onShowStepCallback = function(obj)  {
+    var step_num = obj.attr('rel'); // get the current step number
     var prefix = json.inputs.prefix;
-    var id = prefix + "casesdirectory";
-    
+    var processStepType = json.processSteps[step_num]['type'];
+    var processStepId = json.processSteps[step_num]['id'];
+    var processStepTitle = json.processSteps[step_num]['title'];
+  
+    if(processStepType === "cases") {
+        var id = prefix + processStepId;
+        midas.rodent.ss.selectionCallbacks[id] = midas.rodent.util.createCasesCallback(prefix, step_num, "2-Registration");
+        $('#'+id+'_button').click(function(){
+            midas.loadDialog("selectfolder_outputfolder","/browse/selectfolder");
+            midas.showDialog('Browse for Cases folder');
+            midas.rodent.ss.currentBrowser = id;
+        });
+    }
+    if(processStepType === "multiItems") {
+        var id = prefix + processStepId;
+        midas.rodent.ss.selectionCallbacks[id] = midas.rodent.util.createMultiItemCallback(prefix, processStepId, step_num);
+        $('#'+id+'_button').click(function(){
+            midas.loadDialog("selectfolder_outputfolder","/browse/selectfolder");
+            midas.showDialog('Browse for ' + processStepTitle + ' folder');
+            midas.rodent.ss.currentBrowser = id;
+        });
+    }
+    if(processStepType === "singleItems") {
+        $.each(json.inputs.singleItems, function(itemId, item){
+            var id = prefix + itemId;
+            $('#'+id+'_button').click(function(){
+                var label = json.inputs.singleItems[itemId]['label'];
+                midas.loadDialog("selectitem_inputitem","/browse/selectitem");
+                midas.showDialog('Browse for '+ label);
+                midas.rodent.ss.currentBrowser = id;
+            });
+        });
+    }
+}
+
+
+
+itemSelectionCallback = function(name, id)
+  {
+  $('#'+midas.rodent.ss.currentBrowser+'_name').html(name);
+  $('#'+midas.rodent.ss.currentBrowser).val(id);
+  return;
+  }
+
+folderSelectionCallback = function(folder_name, folder_id)
+  {
+  $('#'+midas.rodent.ss.currentBrowser+'_name').html(folder_name);
+  $('#'+midas.rodent.ss.currentBrowser).val(folder_id);
+  var callBack = midas.rodent.ss.selectionCallbacks[midas.rodent.ss.currentBrowser];
+  callBack(folder_id);
+  return;
+  }
+
+
+  
+  
+
     // create a callback to run after selecting the cases folder
-    var casesCallback = function(folder_id) {
+    /*var casesCallback = function(folder_id) {
         // get the list of cases from the server
         // setup checkboxes to allow the user to select a subset of cases
         ajaxWebApi.ajax({
@@ -145,54 +203,21 @@ midas.rodent.ss.onShowStepCallback = function(obj)
                 });
                 rows = rows + "</ul>";
                 checkbox_div.append(rows);
-
-                var suffix_span = '<span><input type="text" id="'+prefix+'suffix" />Suffix</span>';                    
-                checkbox_div.append(suffix_span);
-
+                
+                // now get the list of suffixes for this pipeline
+                // add them as options of a drop down
+                ajaxWebApi.ajax({
+                    method: 'midas.rodent.list.case.suffixes',
+                    args: 'folder_id=' + folder_id + "&selected_subfolder_name=2-Registration",
+                    success: function(results) {
+                        var suffixSelectId = prefix + "suffix";
+                        var suffixSelect = 'Suffix:<select id="'+suffixSelectId+'"></input>';
+                        checkbox_div.append(suffixSelect);
+                        $.each(results.data.suffixes, function(index, suffix) {
+                            $("#"+suffixSelectId).append('<option value='+suffix+'>'+suffix+'</option>');
+                        });
+                    }
+                });
             }
         });
-    };
-    midas.rodent.ss.selectionCallbacks[id] = casesCallback;
-
-    $('#'+id+'_button').click(function(){
-        midas.loadDialog("selectfolder_outputfolder","/browse/selectfolder");
-        midas.showDialog('Browse for Cases folder');
-        midas.rodent.ss.currentBrowser = id;
-    });
-    
-    }
-  if(step_num == 2)
-    {
-    var prefix = json.inputs.prefix;
-    var items = json.inputs.items;
-    $.each( items , function(k, v){
-      var id = prefix + k;
-      $('#'+id+'_button').click(function(){
-          midas.loadDialog("selectitem_inputitem","/browse/selectitem");
-          midas.showDialog('Browse');
-          midas.rodent.ss.currentBrowser = id;
-      });
-    }); 
-    }
-
-
-  }
-
-
-
-
-itemSelectionCallback = function(name, id)
-  {
-  $('#'+midas.rodent.ss.currentBrowser+'_name').html(name);
-  $('#'+midas.rodent.ss.currentBrowser).val(id);
-  return;
-  }
-
-folderSelectionCallback = function(folder_name, folder_id)
-  {
-  $('#'+midas.rodent.ss.currentBrowser+'_name').html(folder_name);
-  $('#'+midas.rodent.ss.currentBrowser).val(folder_id);
-  var callBack = midas.rodent.ss.selectionCallbacks[midas.rodent.ss.currentBrowser];
-  callBack(folder_id);
-  return;
-  }
+    };*/
