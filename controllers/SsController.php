@@ -127,7 +127,7 @@ class Rodent_SsController extends Rodent_AppController
     $configInputs = array();
     $substrInd = strlen($this->pipelinePrefix);
     $caseFolderPrefix = $this->pipelinePrefix . "casefolder_";
-    $caseFolderSuffix = $this->pipelinePrefix . "case_suffix";
+    $caseFolderSuffix = $this->pipelinePrefix . "cases_suffix";
     $caseFolderSubstrInd = strlen($caseFolderPrefix);
     $multiitemPrefix = $this->pipelinePrefix . "multiitem_";
     $multiitemSubstrInd = strlen($multiitemPrefix);
