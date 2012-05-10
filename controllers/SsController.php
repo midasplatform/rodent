@@ -118,7 +118,7 @@ class Rodent_SsController extends Rodent_AppController
     $taskDao = $kwbatchmakeComponent->createTask($userDao);
     
     // export any data needed by the pipeline from midas
-    $singleBitstreamItemParams = array("templategridfiles" => "Template grid file");
+    $singleBitstreamItemParams = array("templategridfile" => "Template grid file");
     
     $singleBitstreamItemIds = array();
 
