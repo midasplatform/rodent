@@ -62,7 +62,7 @@ midas.rodent.ss.onFinishCallback = function()
              requestData[input.id] = input.checked; 
          }
      });
-     var suffix = prefix+'suffix';
+     var suffix = prefix+'cases_suffix';
      requestData[suffix] = $('#'+suffix).val();
      $.each($(".pipelineparameter"), function(index, input) {
          if(input.type === "checkbox") {
