@@ -237,7 +237,7 @@ class Rodent_ExecuteComponent extends AppComponent
     // generate and run the condor dag
     $kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
     $dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
-    //$kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
+    $kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
     }
 
 
