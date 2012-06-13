@@ -1,8 +1,8 @@
 var midas = midas || {};
 midas.rodent = midas.rodent || {};
-midas.rodent.ss = midas.rodent.ss|| {};
+midas.rodent.pipeline = midas.rodent.pipeline|| {};
 
-midas.rodent.ss.currentBrowser = false;
+midas.rodent.pipeline.currentBrowser = false;
 var results = new Array;
 
 $(document).ready(function(){
@@ -22,9 +22,9 @@ $(document).ready(function(){
     labelPrevious:'Previous', // label for Previous button
     labelFinish:'Create Job',  // label for Finish button
     // Events
-    onLeaveStep: midas.rodent.ss.onLeaveStepCallback, // triggers when leaving a step
-    onShowStep: midas.rodent.ss.onShowStepCallback,  // triggers when showing a step
-    onFinish: midas.rodent.ss.onFinishCallback  // triggers when Finish button is clicked
+    onLeaveStep: midas.rodent.pipeline.onLeaveStepCallback, // triggers when leaving a step
+    onShowStep: midas.rodent.pipeline.onShowStepCallback,  // triggers when showing a step
+    onFinish: midas.rodent.pipeline.onFinishCallback  // triggers when Finish button is clicked
   }
   );
 
@@ -38,18 +38,19 @@ $(document).ready(function(){
 
 
 
-midas.rodent.ss.onLeaveStepCallback = function(obj)
+midas.rodent.pipeline.onLeaveStepCallback = function(obj)
   {
   var step_num= obj.attr('rel'); // get the current step number
-  return midas.rodent.ss.validateSteps(step_num); // return false to stay on step and true to continue navigation
+  return midas.rodent.pipeline.validateSteps(step_num); // return false to stay on step and true to continue navigation
   }
 
-midas.rodent.ss.onFinishCallback = function()
+midas.rodent.pipeline.onFinishCallback = function()
   {
-   if(midas.rodent.ss.validateAllSteps())
+   if(midas.rodent.pipeline.validateAllSteps())
      {
      var requestData = {};
      var prefix = json.inputs.prefix;
+     var controller_path = json.inputs.controllerPath;
      var cases_class = prefix+'casefolder';
      $.each($("."+cases_class), function(index, input) {
          if(input.checked) {
@@ -74,12 +75,12 @@ midas.rodent.ss.onFinishCallback = function()
      });
      $(this).after('<img  src="'+json.global.webroot+'/core/public/images/icons/loading.gif" alt="Saving..." />')
      $(this).remove();
-// TODO more generic way of getting this value
-     var cases_folder_id = $('#rodent_skullstrip_casesdirectory').val();
+     var cases_folder_id = $('#'+prefix+'casesdirectory').val();
+     requestData['casesFolderId'] = cases_folder_id;
      $.ajax(
        {
        type: "POST",
-       url: json.global.webroot+"/rodent/ss/startjob",
+       url: json.global.webroot+"/rodent/"+controller_path+"/startjob",
        data: requestData,
        success: function(data, textStatus)
          {
@@ -103,28 +104,31 @@ midas.rodent.ss.onFinishCallback = function()
   }
 
 
-midas.rodent.ss.selectionCallbacks = {};
+midas.rodent.pipeline.selectionCallbacks = {};
 
 
 
 
-midas.rodent.ss.validateSteps = function(stepnumber)
+midas.rodent.pipeline.validateSteps = function(stepnumber)
   {
   var isStepValid = true;
   // validate step 1
   //HACK for now, no validation
+  // TODO how to validate here with different pipelines?
   return true;
   }
 
-midas.rodent.ss.validateAllSteps = function()
+
+// TODO how to validate here with different pipelines?
+midas.rodent.pipeline.validateAllSteps = function()
   {
-  return midas.rodent.ss.validateSteps(1) && 
-         midas.rodent.ss.validateSteps(2) && 
-         midas.rodent.ss.validateSteps(3) && 
-         midas.rodent.ss.validateSteps(4);
+  return midas.rodent.pipeline.validateSteps(1) && 
+         midas.rodent.pipeline.validateSteps(2) && 
+         midas.rodent.pipeline.validateSteps(3) && 
+         midas.rodent.pipeline.validateSteps(4);
   }
 
-midas.rodent.ss.onShowStepCallback = function(obj)  {
+midas.rodent.pipeline.onShowStepCallback = function(obj)  {
     var step_num = obj.attr('rel'); // get the current step number
     var prefix = json.inputs.prefix;
     var processStepType = json.processSteps[step_num]['type'];
@@ -133,20 +137,22 @@ midas.rodent.ss.onShowStepCallback = function(obj)  {
   
     if(processStepType === "cases") {
         var id = prefix + processStepId;
-        midas.rodent.ss.selectionCallbacks[id] = midas.rodent.util.createCasesCallback(prefix, step_num, "2-Registration");
+        //TODO get cases path from json
+        var cases_folder_name = json.inputs.casesFolderName;
+        midas.rodent.pipeline.selectionCallbacks[id] = midas.rodent.util.createCasesCallback(prefix, step_num, cases_folder_name);
         $('#'+id+'_button').click(function(){
             midas.loadDialog("selectfolder_outputfolder","/browse/selectfolder");
             midas.showDialog('Browse for Cases folder');
-            midas.rodent.ss.currentBrowser = id;
+            midas.rodent.pipeline.currentBrowser = id;
         });
     }
     if(processStepType === "multiItems") {
         var id = prefix + processStepId;
-        midas.rodent.ss.selectionCallbacks[id] = midas.rodent.util.createMultiItemCallback(prefix, processStepId, step_num);
+        midas.rodent.pipeline.selectionCallbacks[id] = midas.rodent.util.createMultiItemCallback(prefix, processStepId, step_num);
         $('#'+id+'_button').click(function(){
             midas.loadDialog("selectfolder_outputfolder","/browse/selectfolder");
             midas.showDialog('Browse for ' + processStepTitle + ' folder');
-            midas.rodent.ss.currentBrowser = id;
+            midas.rodent.pipeline.currentBrowser = id;
         });
     }
     if(processStepType === "singleItems") {
@@ -156,7 +162,7 @@ midas.rodent.ss.onShowStepCallback = function(obj)  {
                 var label = json.inputs.singleItems[itemId]['label'];
                 midas.loadDialog("selectitem_inputitem","/browse/selectitem");
                 midas.showDialog('Browse for '+ label);
-                midas.rodent.ss.currentBrowser = id;
+                midas.rodent.pipeline.currentBrowser = id;
             });
         });
     }
@@ -166,16 +172,16 @@ midas.rodent.ss.onShowStepCallback = function(obj)  {
 
 itemSelectionCallback = function(name, id)
   {
-  $('#'+midas.rodent.ss.currentBrowser+'_name').html(name);
-  $('#'+midas.rodent.ss.currentBrowser).val(id);
+  $('#'+midas.rodent.pipeline.currentBrowser+'_name').html(name);
+  $('#'+midas.rodent.pipeline.currentBrowser).val(id);
   return;
   }
 
 folderSelectionCallback = function(folder_name, folder_id)
   {
-  $('#'+midas.rodent.ss.currentBrowser+'_name').html(folder_name);
-  $('#'+midas.rodent.ss.currentBrowser).val(folder_id);
-  var callBack = midas.rodent.ss.selectionCallbacks[midas.rodent.ss.currentBrowser];
+  $('#'+midas.rodent.pipeline.currentBrowser+'_name').html(folder_name);
+  $('#'+midas.rodent.pipeline.currentBrowser).val(folder_id);
+  var callBack = midas.rodent.pipeline.selectionCallbacks[midas.rodent.pipeline.currentBrowser];
   callBack(folder_id);
   return;
   }

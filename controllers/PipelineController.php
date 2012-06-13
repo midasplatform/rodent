@@ -1,400 +1,267 @@
 <?php
 /*=========================================================================
- MIDAS Server
- Copyright (c) Kitware SAS. 26 rue Louis Guérin. 69100 Villeurbanne, FRANCE
- All rights reserved.
- More information http://www.kitware.com
+MIDAS Server
+Copyright (c) Kitware SAS. 26 rue Louis Guérin. 69100 Villeurbanne, FRANCE
+All rights reserved.
+More information http://www.kitware.com
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-         http://www.apache.org/licenses/LICENSE-2.0.txt
+http://www.apache.org/licenses/LICENSE-2.0.txt
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 =========================================================================*/
-/** job controller*/
-class Remoteprocessing_JobController extends Remoteprocessing_AppController
+require_once BASE_PATH . '/modules/rodent/AppController.php';
+/** as controller*/
+abstract class Rodent_PipelineController extends Rodent_AppController
 {
   public $_models = array('Item', 'Bitstream', 'ItemRevision', 'Assetstore', 'Folder');
-  public $_components = array('Upload');
-  public $_moduleComponents = array('Executable', 'Job');
-  public $_moduleModels = array('Job');
+  public $_components = array('Export');
 
-  /** manage jobs */
-  function manageAction()
-    {
-    if(!$this->logged)
-      {
-      $this->haveToBeLogged();
-      return false;
-      }
-    $this->view->header = $this->t("Manage Your Jobs");
+  // PIPELINE
 
-    $modelLoad = new MIDAS_ModelLoader();
-    $schedulerJobModel = $modelLoad->loadModel('Job', 'scheduler');
-    $this->view->scheduledJobs = $schedulerJobModel->getJobsByTaskAndCreator('TASK_REMOTEPROCESSING_ADD_JOB', $this->userSession->Dao);
-    $this->view->relatedJobs = $this->Remoteprocessing_Job->getByUser($this->userSession->Dao, 10);
-    }
+  abstract function getPipelinePrefix();
+  abstract function getUiTitle();
+  abstract function getCasesSelection();
+  abstract function getMultiItemSelections();
+  abstract function getSingleItemSelections();
+  abstract function getParameters();
+  abstract function getSingleBitstreamItemParams();
+  abstract function getPostscriptPath();
+  abstract function getConfigScriptStem();
+  abstract function getBmScript();
+  abstract function getInputFolder();
+  abstract function getOutputFolderStem();
 
+  /*
+  protected $pipelinePrefix = "rodent_skullstrip_";
+  protected $uiTitle = "Skull Strip Pipeline Wizard";
+  protected $casesSelection = array('id'=> "casesdirectory", 'label' => "Select the Cases Directory");
+  protected $multiItemSelections = array("rregfiles" => "Rreg files", "templatefiles" => "Template files");
+  protected $singleItemSelections = array("templategridfile" => array("label" => "Template grid file", "bitstreamCount" => "single"));
+//TODO want to add in default value for parameters
+  protected $parameters = array("newmasktag" => array("type" => "text", "label" => "Tag of the mask that is gonna be created"),
+	"rigid" => array("type" => "boolean", "label" => "Using rigid transformation? (usually checked)"),
+        "registration" => array("type" => "boolean", "label" => "Do registration? (usually checked)"),
+        "biasfieldcorrection" => array("type" => "boolean", "label" => "Use bias field correction?"),
+        "rigidisFA" => array("type" => "boolean", "label" => "rigidisFA"),
+        "scalar" => array("type" => "boolean", "label" => "Is the input scalar?"),
+        "scaled" => array("type" => "boolean", "label" => "Is the input scaled?"),
+        "filtercurvature" => array("type" => "boolean", "label" => "filtercurvature? (usually checked)"),
+        "segimagestype" => array("type" => "text", "label" => "Suffix of the images used for segmentation (usually the same suffix given on folder window)"),
+        "radius" => array("type" => "integer", "label" => "radius (usually 5)"),
+        "abcpriors" => array("type" => "text", "label" => "abcpriors (usually 1 1 1 1)"),
+        "rigidisMD" => array("type" => "boolean", "label" => "rigidisMD"),
+        "sequence" => array("type"=>"text", "label"=>"sequence 0 NB_LOOPS 1 (usually 0 0 1)"));
+  protected $singleBitstreamItemParams = array("templategridfile" => "Template grid file");
+    $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/ss_condor_postscript.py';
+    $configScriptStem = "ss";
+    $bmScript = "ss1.pipeline.bms";
+  inputFolder = "2-Registration"
+  outputFolder = "3-SkullStripping"
+    */
+    
   /** init a job*/
+  
+// TODO this init action could be put at the superclass  
   function initAction()
     {
-    $this->view->header = $this->t("Create Job Wizard");
+    $this->view->header = $this->getUiTitle();
     if(!$this->logged)
       {
       $this->haveToBeLogged();
       return false;
       }
-    $scheduled = $this->_getParam("scheduled");
-    if(isset($scheduled))
-      {
-      $scheduled = true;
-      $this->view->header = $this->t("Schedule Job Wizard");
-      }
-    else
-      {
-      $scheduled = false;
-      }
-
-    $itemId = $this->_getParam("itemId");
-    if(isset($itemId))
-      {
-      $itemDao = $this->Item->load($itemId);
-      if($itemDao === false)
-        {
-        throw new Zend_Exception("This item doesn't exist.");
-        }
-      $this->view->itemDao = $itemDao;
-      }
-
-    $this->view->json['job']['scheduled'] = $scheduled;
-    $this->view->scheduled = $scheduled;
-    if($this->_request->isPost())
-      {
-      $itemId = $this->_getParam("itemId");
-      if(!isset($itemId) || !is_numeric($itemId))
-        {
-        throw new Zend_Exception("itemId  should be a number");
-        }
-
-      $itemDao = $this->Item->load($itemId);
-      if($itemDao === false)
-        {
-        throw new Zend_Exception("This item doesn't exist.");
-        }
-      if(!$this->Item->policyCheck($itemDao, $this->userSession->Dao, MIDAS_POLICY_WRITE))
-        {
-        throw new Zend_Exception("Problem policies.");
-        }
-
-      $metaFile = $this->ModuleComponent->Executable->getMetaIoFile($itemDao);
-      $metaContent = new SimpleXMLElement(file_get_contents($metaFile->getFullPath()));
-      $this->disableLayout();
-      $this->disableView();
-
-      // transform post results to a command array using the executable definition file
-      $cmdOptions = array();
-      $parametersList = array();
-      $i = 0;
-      foreach($metaContent->option as $option)
-        {
-        if(!isset($_POST['results'][$i]))
-          {
-          continue;
-          }
-
-        $result = $_POST['results'][$i];
-        if($option->channel == 'ouput')
-          {
-          $resultArray = explode(";;", $result);
-          $folder = $this->Folder->load($resultArray[0]);
-          if($folder == false || !$this->Folder->policyCheck($folder, $this->userSession->Dao, MIDAS_POLICY_WRITE))
-            {
-            throw new Zend_Exception('Unable to find folder or permission error');
-            }
-          $cmdOptions[$i] = array('type' => 'output', 'folderId' => $resultArray[0], 'fileName' => $resultArray[1]);
-          }
-        else if($option->field->external == 1)
-          {
-          $parametersList[$i] = (string)$option->name;
-          if(strpos($result, 'folder') !== false)
-            {
-            $folder = $this->Folder->load(str_replace('folder', '', $result));
-            if($folder == false || !$this->Folder->policyCheck($folder, $this->userSession->Dao, MIDAS_POLICY_READ))
-              {
-              throw new Zend_Exception('Unable to find folder or permission error');
-              }
-            $items = $folder->getItems();
-            $cmdOptions[$i] = array('type' => 'input', 'item' => array(), 'folder' => $folder->getKey());
-            }
-          else
-            {
-            $item = $this->Item->load($result);
-            if($item == false || !$this->Item->policyCheck($item, $this->userSession->Dao, MIDAS_POLICY_READ))
-              {
-              throw new Zend_Exception('Unable to find item');
-              }
-            $cmdOptions[$i] = array('type' => 'input', 'item' => array($item));
-            }
-          }
-        else
-          {
-          $parametersList[$i] = (string)$option->name;
-          $cmdOptions[$i] = array('type' => 'param', 'values' => array());
-          if(strpos($result, ';') !== false)
-            {
-            $cmdOptions[$i]['values'] = explode(';', $result);
-            }
-          elseif(strpos($result, '-') !== false && strpos($result, '-') !== 0)
-            {
-            $tmpArray = explode('(', $result);
-            if(count($tmpArray) == 1)
-              {
-              $step = 1;
-              }
-            else
-              {
-              $step = substr($tmpArray[1], 0, strlen($tmpArray[1])-1);
-              }
-
-            $tmpArray = explode('-', $tmpArray[0]);
-            $start = $tmpArray[0];
-            $end = $tmpArray[1];
-            for($j = $start;$j <= $end;$j = $j + $step)
-              {
-              $cmdOptions[$i]['values'][] = $j;
-              }
-            }
-          else
-            {
-            $cmdOptions[$i]['values'][] = $result;
-            }
-
-          if(!empty($option->tag))
-            {
-            $cmdOptions[$i]['tag'] = (string)$option->tag;
-            }
-          }
-        $i++;
-        }
-
-
-      $fire_time = false;
-      $time_interval = false;
-      if(isset($_POST['date']))
-        {
-        $fire_time = $_POST['date'];
-        if($_POST['interval'] != 0)
-          {
-          $time_interval = $_POST['interval'];
-          }
-        }
-
-      $this->ModuleComponent->Executable->initAndSchedule($this->userSession->Dao, $itemDao, $_POST['name'], $cmdOptions, $parametersList, $fire_time, $time_interval);
-      }
+    $this->requireAdminPrivileges();
+    
+    $inputs = array("prefix" => $this->getPipelinePrefix());
+    $inputs["cases"] = $this->getCasesSelection();
+    $inputs["casesFolderName"] = $this->getInputFolder();
+    $inputs["multiItems"] = $this->getMultiItemSelections();
+    $inputs["singleItems"] = $this->getSingleItemSelections();
+    $inputs["parameters"] = $this->getParameters();
+    $inputs["controllerPath"] = $this->getConfigScriptStem();
+    
+    $processSteps = array();
+    $processStepInd = 1;
+    if(array_key_exists("cases", $inputs)) {
+        $processSteps[$processStepInd++] = array('title'=>'Select Cases', 'type' => 'cases', 'id'=> "casesdirectory");
     }
-
-  /** return the executable form (should be an ajax call) */
-  function getinitexecutableAction()
-    {
-    $this->disableLayout();
-    $itemId = $this->_getParam("itemId");
-    $scheduled = $this->_getParam("scheduled");
-    if(isset($scheduled) && $scheduled == 1)
-      {
-      $scheduled = true;
-      }
-    else
-      {
-      $scheduled = false;
-      }
-
-    $this->view->scheduled = $scheduled;
-    if(!isset($itemId) || !is_numeric($itemId))
-      {
-      throw new Zend_Exception("itemId  should be a number");
-      }
-
-    $itemDao = $this->Item->load($itemId);
-    if($itemDao === false)
-      {
-      throw new Zend_Exception("This item doesn't exist.");
-      }
-    if(!$this->Item->policyCheck($itemDao, $this->userSession->Dao, MIDAS_POLICY_WRITE))
-      {
-      throw new Zend_Exception("Problem policies.");
-      }
-
-    $metaFile = $this->ModuleComponent->Executable->getMetaIoFile($itemDao);
-    if($metaFile == false)
-      {
-      throw new Zend_Exception("Unable to find meta information");
-      }
-
-    $metaContent = new SimpleXMLElement(file_get_contents($metaFile->getFullPath()));
-    $this->view->metaContent = $metaContent;
-
-    $this->view->itemDao = $itemDao;
-    $this->view->json['item'] = $itemDao->toArray();
+    if(array_key_exists("multiItems", $inputs)) {
+        $multiItems = $inputs["multiItems"];
+        foreach($multiItems as $id => $title) {
+            $processSteps[$processStepInd++] = array('title' => $title, 'label'=>'Select '. $title, 'type' => 'multiItems', 'id' => $id);
+        }
     }
-
-  /** view a job */
-  function viewAction()
-    {
-    $this->view->header = $this->t("Job");
-    $jobId = $this->_getParam("jobId");
-    $jobDao = $this->Remoteprocessing_Job->load($jobId);
-    if(!$jobDao)
-      {
-      throw new Zend_Exception("Unable to find job.");
-      }
-
-    $this->view->job = $jobDao;
-    $this->view->header = $this->t("Job: ".$jobDao->getName());
-    $items = $jobDao->getItems();
-    $inputs = array();
-    $outputs = array();
-    $parametersList = array();
-    $executable = false;
-    $log = false;
-
-    foreach($items as $key => $item)
-      {
-      if(!$this->Item->policyCheck($item, $this->userSession->Dao))
-        {
-        unset($items[$key]);
-        continue;
-        }
-      if($item->type == MIDAS_REMOTEPROCESSING_RELATION_TYPE_EXECUTABLE)
-        {
-        $executable = $item;
-        }
-      elseif($item->type == MIDAS_REMOTEPROCESSING_RELATION_TYPE_INPUT)
-        {
-        $inputs[$item->getName()] = $item;
-        }
-      elseif($item->type == MIDAS_REMOTEPROCESSING_RELATION_TYPE_OUPUT)
-        {
-        $reviesion = $this->Item->getLastRevision($item);
-        $metadata = $this->ItemRevision->getMetadata($reviesion);
-        $item->metadata = $metadata;
-
-        foreach($metadata as $m)
-          {
-          if($m->getElement() == 'parameter' && !in_array($m->getQualifier(), $parametersList))
-            {
-            $parametersList[$m->getQualifier()] = $m->getQualifier();
-            }
-          $item->metadataParameters[$m->getQualifier()] = $m->getValue();
-          }
-
-        $outputs[] = $item;
-        }
-      elseif($item->type == MIDAS_REMOTEPROCESSING_RELATION_TYPE_RESULTS)
-        {
-        $reviesion = $this->Item->getLastRevision($item);
-        $metadata = $this->ItemRevision->getMetadata($reviesion);
-        $item->metadata = $metadata;
-
-        $bitstreams = $reviesion->getBitstreams();
-        if(count($bitstreams) == 1)
-          {
-          $log = file_get_contents($bitstreams[0]->getFullPath());
-          }
-        }
-      }
-
-    $this->view->outputs = $outputs;
-    $this->view->log = $log;
-    $this->view->results =  $this->ModuleComponent->Job->convertXmlREsults($log);
+    if(array_key_exists("singleItems", $inputs)) {
+        $processSteps[$processStepInd++] = array('title'=>'Select Items', 'type' => 'singleItems');
+    }
+    if(array_key_exists("parameters", $inputs)) {
+        $processSteps[$processStepInd++] = array('title'=>'Select Parameters', 'type' => 'parameters');
+    }
+    
+    $this->view->processSteps = $processSteps;
     $this->view->inputs = $inputs;
-    $this->view->executable = $executable;
-    $this->view->parameters = $parametersList;
+    $this->view->json['inputs'] = $inputs;
+    $this->view->json['processSteps'] = $processSteps;
+    $this->renderScript('pipeline/init.phtml');
     }
 
-  /** Valid  entries (ajax) */
-  public function validentryAction()
-    {
-    if(!$this->isTestingEnv())
-      {
-      $this->requireAjaxRequest();
-      }
 
-    $this->disableLayout();
-    $this->disableView();
-    $entry = $this->_getParam("entry");
-    $type = $this->_getParam("type");
-    if(!is_string($entry) || !is_string($type))
-      {
-      echo 'false';
-      return;
-      }
-    switch($type)
-      {
-      case 'isexecutable' :
-        $itemDao = $this->Item->load($entry);
-        if($itemDao !== false && $this->ModuleComponent->Executable->getExecutable($itemDao) !== false)
-          {
-          echo "true";
-          }
-        else
-          {
-          echo "false";
-          }
-        return;
-      case 'ismeta' :
-        $itemDao = $this->Item->load($entry);
-        if($itemDao !== false && $this->ModuleComponent->Executable->getMetaIoFile($itemDao) !== false)
-          {
-          echo "true";
-          }
-        else
-          {
-          echo "false";
-          }
-        return;
-      default :
-        echo "false";
-        return;
-      }
-    } //end valid entry
-
-  /** Get  entries (ajax) */
-  public function getentryAction()
+// TODO something with output directory    
+// at the end of the run, go to the cases directory, display that folder
+  /**
+   * start an SS job, via an ajax call.
+   */
+  public function startjobAction()
     {
     $this->disableLayout();
     $this->disableView();
-    $entry = $this->_getParam("entry");
-    $type = $this->_getParam("type");
-    if(!is_string($type))
-      {
-      echo JsonComponent::encode(false);
-      return;
-      }
-    switch($type)
-      {
-      case 'getRecentExecutable' :
-        $recent = array();
-        foreach($this->userSession->uploaded as $item)
-          {
-          $item = $this->Item->load($item);
+  
+    // create a task
+    $userDao = $this->userSession->Dao;
+    $componentLoader = new MIDAS_ComponentLoader();
+    $executeComponent = $componentLoader->loadComponent('Execute', 'rodent');
+    $kwbatchmakeComponent = $componentLoader->loadComponent('KWBatchmake', 'batchmake');
+    $taskDao = $kwbatchmakeComponent->createTask($userDao);
+    
+    // export any data needed by the pipeline from midas
+    
+    $singleBitstreamItemIds = array();
 
-          if($item != false && $this->ModuleComponent->Executable->getExecutable($item) !== false)
+    // process the input params
+    $inputParams = $this->_getAllParams();
+
+    $pipelinePrefix = $this->getPipelinePrefix();
+    
+    
+
+
+    
+    $configInputs = array();
+    $substrInd = strlen($pipelinePrefix);
+    $caseFolderPrefix = $pipelinePrefix . "casefolder_";
+    $caseFolderSuffix = $pipelinePrefix . "cases_suffix";
+    $caseFolderSubstrInd = strlen($caseFolderPrefix);
+    $multiitemPrefix = $pipelinePrefix . "multiitem_";
+    $multiitemSubstrInd = strlen($multiitemPrefix);
+    $caseFolders = array();
+    $multiitems = array();
+    foreach($inputParams as $inputParam => $value)
+      {
+      if(strpos($inputParam, $pipelinePrefix) === 0)
+        {
+        if(strpos($inputParam, $caseFolderPrefix) === 0)
+          {
+          // get the case folders by id
+          $folderId = substr($inputParam, $caseFolderSubstrInd);
+          $caseFolders[] = $folderId;
+          }
+        else if(strpos($inputParam, $caseFolderSuffix) === 0)
+          {
+          $caseSuffix = $value;   
+          }
+        else if(strpos($inputParam, $multiitemPrefix) === 0)
+          {
+          $paramIdAndItemId = substr($inputParam, $multiitemSubstrInd);
+          // find the last _, as id could have _ in it
+          $lastUnderscoreInd = strrpos($paramIdAndItemId, "_");
+          $itemId = substr($paramIdAndItemId, $lastUnderscoreInd+1);
+          $paramId = substr($paramIdAndItemId, 0, $lastUnderscoreInd);
+          if(!array_key_exists($paramId, $multiitems)) 
             {
-            $recent[] = $item->toArray();
+            $multiitems[$paramId] = array();  
+            }
+          $multiitems[$paramId][] = $itemId;  
+          }
+        else
+          {
+          // upper case boolean values for BatchMake
+          // TODO should have a better handler for this
+          if($value === 'true')
+            {
+            $value = "TRUE";
+            }
+          if($value === 'false')
+            {
+            $value = "FALSE";
+            }
+
+            
+            
+          // collect all config inputs
+          $configInputs[substr($inputParam, $substrInd)] = $value;
+          // find the items needed to export
+          $paramName = substr($inputParam, $substrInd);
+          if(array_key_exists($paramName, $this->getSingleBitstreamItemParams()))
+            {
+            $singleBitstreamItemIds[$paramName] = $value;
             }
           }
-        echo JsonComponent::encode($recent);
-        return;
-      default :
-        echo JsonComponent::encode(false);
-        return;
+        }
       }
-    } //end valid entry
+
+   
+      
+    // specific export for the cases chosen
+    $executeComponent->exportCases($userDao, $taskDao, $configInputs, $caseFolders, $caseSuffix, $this->getInputFolder());  
+
+    // specific export for the multiitems chosen
+    $executeComponent->exportMultiitems($userDao, $taskDao, $configInputs, $multiitems);  
+//need to do something with multiitem
+//prefix_multiitem_id_itemid
+//            combine them into a multiitem, make the multiitem a list, export everything the in the list, export as prefix_id
+  
+  
+    // export remaining inputs  
+    $configParamsToBitstreamPaths = $executeComponent->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $singleBitstreamItemIds);
+    
+    // replace any exported item config params with their path values
+    foreach($configParamsToBitstreamPaths as $configInput => $bitstreamPath)
+      {
+      $configInputs[$configInput] = $bitstreamPath;
+      }
+    
+ 
+    // create output folders
+      
+    $outputFolderStem = $this->getOutputFolderStem(); 
+    $modelLoad = new MIDAS_ModelLoader();
+    $folderModel = $modelLoad->loadModel('Folder');        
+    // TODO wanted to do this, but can't, as may not have the same same
+    // set of cases selected for each run
+    /*
+    // first we need to find the correct name to call the folder
+    $i = 1;
+    $outputFolderName = $outputFolderStem . '-' . $i;  
+    while($folderModel->getFolderExists($outputFolderName, $casesFolderId))
+      {
+      $i++;
+      $outputFolderName = $outputFolderStem . '-' . $i;
+      }
+    */
+    $outputFolderIds = array();
+    foreach($configInputs['caseFolderIds'] as $caseFolderId)
+      {
+      $outputFolderDao = $folderModel->createFolder($outputFolderStem . '-' . $taskDao->getKey(), '', $caseFolderId);
+      $outputFolderIds[] = $outputFolderDao->getFolderId();
+      }
+    $configInputs['outputFolderIds'] = $outputFolderIds;  
+    
+    $condorPostScriptPath = $this->getPostscriptPath();
+    $configScriptStem = $this->getConfigScriptStem();
+    $bmScript = $this->getBmScript();
+    $executeComponent->executeScript($taskDao, $userDao, $condorPostScriptPath, $configScriptStem, $bmScript, $configInputs);
+  }
+  
+  
+  
+
 
 }//end class
