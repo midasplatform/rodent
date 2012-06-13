@@ -15,6 +15,7 @@ midas.rodent.util.createCasesCallback = function(prefix, stepNumber, subfolderNa
                 // add a checkbox for each of them so the user can select cases
                 // TODO remove the checkboxes_div or else disable browse folders button 
                 // because if you keep selecting a folder the checkboxes keep getting added
+                $('#case_folders_checkboxes_div').remove();
                 $('#step-'+stepNumber).append('<div id="case_folders_checkboxes_div" class="pipeline_checkboxes_div"></div>');
                 var checkbox_div = $('#case_folders_checkboxes_div');
                 checkbox_div.append("Select the cases to run:");
@@ -59,6 +60,7 @@ midas.rodent.util.createMultiItemCallback = function(prefix, processStepId, step
                 // TODO remove the checkboxes_div or else disable browse folders button 
                 // because if you keep selecting a folder the checkboxes keep getting added
                 var divId = 'case_multiitems_checkboxes_div_'+stepNumber;
+                $('#'+divId).remove();
                 $('#step-'+stepNumber).append('<div id="'+divId+'" class="pipeline_checkboxes_div"></div>');
                 var checkbox_div = $('#'+divId);
                 checkbox_div.append("Select the items:");
