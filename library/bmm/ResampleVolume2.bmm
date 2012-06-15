@@ -27,7 +27,7 @@
 				<SubParameter>
 					<Type>4</Type>
 					<Name>typeOfField</Name>
-					<Value>h-Field</Value>
+					<Value></Value>
 					<External>0</External>
 					<Optional>0</Optional>
 				</SubParameter>

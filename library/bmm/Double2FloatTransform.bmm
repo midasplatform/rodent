@@ -2,7 +2,7 @@
         <executable>
                 <Name>Double2FloatTransform</Name>
                 <Version>1.0</Version>
-                <Path>/midas/midas3base/batchmake/bin</Path>
+                <Path>/midas/midas3base/batchmake/bin/Double2FloatTransform</Path>
                 <Parameters>
                        <Parameter>
                                 <Type>4</Type>

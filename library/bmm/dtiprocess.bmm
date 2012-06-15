@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
         <executable>
-                <Name>ImageMath</Name>
+                <Name>dtiprocess</Name>
                 <Version>1.0</Version>
-                <Path>/midas/midas3base/batchmake/bin</Path>
+                <Path>/midas/midas3base/batchmake/bin/dtiprocess</Path>
                 <Parameters>
                        <Parameter>
                                 <Type>1</Type>
                                 <Name>dti_image</Name>
-                                <Value>-dti_image</Value>
+                                <Value>--dti_image</Value>
                                 <External>0</External>
                                 <Optional>0</Optional>
                                 <SubParameter>
@@ -27,6 +27,20 @@
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>matrixFile</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                       </Parameter>
+                       <Parameter>
+                                <Type>1</Type>
+                                <Name>transform</Name>
+                                <Value>-f</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>transformFile</Name>
                                         <Value></Value>
                                         <External>0</External>
                                         <Optional>1</Optional>

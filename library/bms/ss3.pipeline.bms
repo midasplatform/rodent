@@ -1,21 +1,27 @@
+echo()
+echo('ss3')
+echo()
+
 ### The script uses:
 #- ResampleVolume2
 #prepare files before computation
 #rreg and areg need .gipl.gz files so we convert
 #the atlas files to this format
 set( count 0)
-ForEach( file ${ATLAS_TAG} )
-  GetParam(EXT ${ATLAS_EXT} ${count})
-  Set( SrcImg ${ATLAS_DIR}/${file}${EXT} )
+ForEach( file ${ATLAS_TAG}) 
+  GetParam(pathAndFile ${ATLAS_FILES} ${count})
+  Set( SrcImg ${pathAndFile})
 
-  if( ${Registration} == TRUE )
+  if( ${Registration} == 'TRUE' )
      Set( DstImg ${tempDir}/${file}.gipl.gz )
-  else( ${Registration} == TRUE )
+  else( ${Registration} == 'TRUE' )
      Set( DstImg ${tempDir}/${file}.mha )
-  endif( ${Registration} == TRUE )
+  endif( ${Registration} == 'TRUE' )
+  
+  echo ('Src = ' ${SrcImg} ' Dst = ' ${DstImg})
 
   If( ${file} == 'template' )
-    Set (transformCmd ${ImageMath} ${SrcImg} -rescale 0,10000 -outfile ${DstImg} )
+#    Set (transformCmd ${ImageMath} ${SrcImg} -rescale 0,10000 -outfile ${DstImg} )
       SetApp(transformCmd @ImageMath)
       SetAppOption(transformCmd.infile ${SrcImg})
       SetAppOption(transformCmd.outfile 1)
@@ -23,7 +29,7 @@ ForEach( file ${ATLAS_TAG} )
       SetAppOption(transformCmd.rescale 1)
       SetAppOption(transformCmd.rescale.rescale '0,10000')
   Else( ${file} == 'template' )
-    Set (transformCmd ${ResampleVolume2} ${SrcImg} ${DstImg} -i nn )
+#    Set (transformCmd ${ResampleVolume2} ${SrcImg} ${DstImg} -i nn )
       SetApp(transformCmd @ResampleVolume2)
       SetAppOption(transformCmd.inputVolume ${SrcImg})
       SetAppOption(transformCmd.outputVolume ${DstImg})

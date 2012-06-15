@@ -2,8 +2,40 @@
         <executable>
                 <Name>unu</Name>
                 <Version>1.0</Version>
-                <Path>/midas/midas3base/batchmake/unu</Path>
+                <Path>/midas/midas3base/batchmake/bin/unu</Path>
                 <Parameters>
+                       <Parameter>
+                                <Type>1</Type>
+                                <Name>convert</Name>
+                                <Value>convert</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                       </Parameter>
+                       <Parameter>
+                                <Type>1</Type>
+                                <Name>type</Name>
+                                <Value>-t</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>unuType</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                       </Parameter>
+                       <Parameter>
+                                <Type>1</Type>
+                                <Name>1op</Name>
+                                <Value>1op</Value>
+		       <Parameter>
+                                <Type>1</Type>
+                                <Name>pad</Name>
+                                <Value>pad</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                       </Parameter>
                        <Parameter>
                                 <Type>1</Type>
                                 <Name>input</Name>
@@ -31,14 +63,6 @@
                                         <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
-                       </Parameter>
-
-		       <Parameter>
-                                <Type>1</Type>
-                                <Name>pad</Name>
-                                <Value>pad</Value>
-                                <External>0</External>
-                                <Optional>1</Optional>
                        </Parameter>
                        <Parameter>
                                 <Type>1</Type>
@@ -82,29 +106,6 @@
                                         <Optional>1</Optional>
                                 </SubParameter>
                        </Parameter>
-
-                       <Parameter>
-                                <Type>1</Type>
-                                <Name>convert</Name>
-                                <Value>convert</Value>
-                                <External>0</External>
-                                <Optional>1</Optional>
-                       </Parameter>
-                       <Parameter>
-                                <Type>1</Type>
-                                <Name>type</Name>
-                                <Value>-t</Value>
-                                <External>0</External>
-                                <Optional>1</Optional>
-                                <SubParameter>
-                                        <Type>4</Type>
-                                        <Name>unuType</Name>
-                                        <Value></Value>
-                                        <External>0</External>
-                                        <Optional>1</Optional>
-                                </SubParameter>
-                       </Parameter>
-
                        <Parameter>
                                 <Type>1</Type>
                                 <Name>1op</Name>
@@ -120,4 +121,4 @@
                                 </SubParameter>
                        </Parameter>
                 </Parameters>
-                     
+           </executable>          
