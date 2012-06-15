@@ -2,49 +2,42 @@
         <executable>
                 <Name>ImageStat</Name>
                 <Version>1.0</Version>
-                <Path>/midas/midas3base/batchmake/bin</Path>
+                <Path>/midas/midas3base/batchmake/bin/ImageStat</Path>
                 <Parameters>
                         <Parameter>
-                                <Type>4</Type>
+                                <Type>0</Type>
                                 <Name>infile</Name>
                                 <Value></Value>
-                                <Parent>0</Parent>
                                 <External>0</External>
                                 <Optional>0</Optional>
                         </Parameter>
-
                         <Parameter>
                                 <Type>1</Type>
                                 <Name>label</Name>
                                 <Value>-label</Value>
-                                <Parent>0</Parent>
                                 <External>0</External>
-                                <Optional>0</Optional>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>label</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Optional>0</Optional>
+                                </SubParameter>
                         </Parameter>
-                        <Parameter>
-                                <Type>4</Type>
-                                <Name>label.file</Name>
-                                <Value></Value>
-                                <Parent>3</Parent>
-                                <External>0</External>
-                                <Optional>0</Optional>
-                        </Parameter>
-
                         <Parameter>
                                 <Type>1</Type>
                                 <Name>outbase</Name>
                                 <Value>-outbase</Value>
-                                <Parent>0</Parent>
                                 <External>0</External>
-                                <Optional>0</Optional>
-                        </Parameter>
-                        <Parameter>
-                                <Type>4</Type>
-                                <Name>outbase.type</Name>
-                                <Value></Value>
-                                <Parent>3</Parent>
-                                <External>0</External>
-                                <Optional>0</Optional>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>outbase</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Optional>0</Optional>
+                                </SubParameter>
                         </Parameter>
                 </Parameters>
         </executable>

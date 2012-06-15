@@ -110,7 +110,7 @@ class Rodent_AController extends Rodent_AppController
         "originalimages" => "Original Images");
         //"externalatlasandprobmapdirectory" => "External atlas and probability map directory"
  
-    $itemSelections = array("populationaverage" => "Computed population average",
+    $singleItemSelections = array("populationaverage" => "Computed population average",
         "parcellation" => "Segmentation file",
 	"imagegrid" => "Image grid (e.g. Grid.nrrd)");
     

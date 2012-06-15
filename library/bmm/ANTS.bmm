@@ -93,7 +93,7 @@
                                 <Name>diff_Elast_Cmd</Name>
                                 <Value></Value>
                                 <External>0</External>
-                                <Noquote>1</Noquote>
+
                                 <Optional>1</Optional>
                        </Parameter>
                        <Parameter>

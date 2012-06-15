@@ -1,3 +1,7 @@
+echo()
+echo('ss2')
+echo()
+
 #Variables initialization
 GetFilename( MD_TAG ${MD_SUFFIX} NAME_WITHOUT_EXTENSION )
 GetFilename( MD_EXT ${MD_SUFFIX} EXTENSION )
@@ -14,17 +18,24 @@ GetFilename( RIGID_REGISTRATION_IMAGE_EXT ${RIGID_REGISTRATION_IMAGE_SUFFIX} EXT
 
 #RegEx( RIGID_REGISTRATION_IMAGE_TAG ${RIGID_REGISTRATION_IMAGE_SUFFIX} '\..*' REPLACE '' )
 #RegEx( RIGID_REGISTRATION_IMAGE_EXT ${RIGID_REGISTRATION_IMAGE_SUFFIX} '\..*' MATCH )
-
+set(count 0)
 ForEach( file ${ATLAS_FILES})
-  GetFilename( temp_TAG ${file} NAME_WITHOUT_EXTENSION )
-  GetFilename( temp_EXT ${file} EXTENSION )
-# RegEx( temp_TAG ${file} '\..*' REPLACE '' )
-# RegEx( temp_EXT ${file} '\..*' MATCH )
-  Set( ATLAS_TAG ${temp_TAG} ${ATLAS_TAG})
-  Set( ATLAS_EXT ${temp_EXT} ${ATLAS_EXT})
+  RegEx(fileWithoutPath ${file} '/.+/' REPLACE '')
+  GetFilename( temp_TAG ${fileWithoutPath} NAME_WITHOUT_EXTENSION )
+  GetFilename( temp_EXT ${fileWithoutPath} EXTENSION )
+ 
+  if (${count} != 0)
+    Set( ATLAS_TAG ${ATLAS_TAG} ${temp_TAG} )
+    Set( ATLAS_EXT ${ATLAS_EXT} ${temp_EXT} )
+  else (${count} !=0)
+    Set( ATLAS_TAG ${temp_TAG} )
+    Set( ATLAS_EXT ${temp_EXT} )	
+  endif(${count} != 0)
+
   if( ${temp_TAG} == template )
     Set( TEMPLATE_EXT ${temp_EXT} )
   endif( ${temp_TAG} == template )
+  Inc (count 1)
 EndForEach( file ${ATLAS_FILES})
 
 

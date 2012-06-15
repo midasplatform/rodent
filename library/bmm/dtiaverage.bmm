@@ -2,8 +2,15 @@
         <executable>
                 <Name>dtiaverage</Name>
                 <Version>1.0</Version>
-                <Path>/midas/midas3base/batchmake/bin</Path>
+                <Path>/midas/midas3base/batchmake/bin/dtiaverage</Path>
                 <Parameters>
+                       <Parameter>
+                                <Type>4</Type>
+                                <Name>infile</Name>
+                                <Value></Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                       </Parameter>
                        <Parameter>
                                 <Type>4</Type>
                                 <Name>list</Name>
@@ -16,7 +23,7 @@
                                 <Name>tensorOutput</Name>
                                 <Value>--tensor_output</Value>
                                 <External>0</External>
-                                <Optional>0</Optional>
+                                <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>tensorName</Name>
@@ -27,10 +34,24 @@
                        </Parameter>
                        <Parameter>
                                 <Type>1</Type>
-                                <Name>matrix</Name>
-                                <Value>-matrix</Value>
+                                <Name>method</Name>
+                                <Value>-m</Value>
                                 <External>0</External>
-                                <Optional>0</Optional>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>method</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Optional>0</Optional>
+                                </SubParameter>
+                       </Parameter>
+                       <Parameter>
+                                <Type>1</Type>
+                                <Name>matrix</Name>
+                                <Value>--matrix</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>mType</Name>

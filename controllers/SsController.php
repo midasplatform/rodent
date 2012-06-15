@@ -50,7 +50,7 @@ class Rodent_SsController extends Rodent_PipelineController
         "sequence" => array("type"=>"text", "label"=>"sequence 0 NB_LOOPS 1 (usually 0 0 1)"));
     }
   function getSingleBitstreamItemParams() { return array("templategridfile" => "Template grid file"); }
-  function getPostscriptPath() { return BASE_PATH . '/modules/rodent/library/ss_condor_postscript.py'; }
+  function getPostscriptPath() { return BASE_PATH . '/modules/rodent/library/py/ss_condor_postscript.py'; }
   function getConfigScriptStem() { return "ss"; }
   function getBmScript() { return "ss1.pipeline.bms"; }
   function getInputFolder() { return "2-Registration"; }

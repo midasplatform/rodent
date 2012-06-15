@@ -2,7 +2,7 @@
         <executable>
                 <Name>ABC</Name>
                 <Version>1.0</Version>
-                <Path>/midas/midas3base/batchmake/ABC</Path>
+                <Path>/midas/midas3base/batchmake/bin/ABC</Path>
                 <Parameters>
                        <Parameter>
                                 <Type>4</Type>
