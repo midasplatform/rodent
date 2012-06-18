@@ -303,34 +303,40 @@ abstract class Rodent_PipelineController extends Rodent_AppController
  
     // create output folders
       
-    $outputFolderStem = $this->getOutputFolderStem(); 
+    $outputFolder = $this->getOutputFolderStem(); 
+    $outputFolderType = $outputFolder["output_folder_type"];
+    $outputFolderStem = $outputFolder["name"];
     $modelLoad = new MIDAS_ModelLoader();
-    $folderModel = $modelLoad->loadModel('Folder');        
-    // TODO wanted to do this, but can't, as may not have the same same
-    // set of cases selected for each run
-    /*
-    // first we need to find the correct name to call the folder
-    $i = 1;
-    $outputFolderName = $outputFolderStem . '-' . $i;  
-    while($folderModel->getFolderExists($outputFolderName, $casesFolderId))
+    $folderModel = $modelLoad->loadModel('Folder');
+
+    if($outputFolderType == "cases_sibling")
       {
-      $i++;
-      $outputFolderName = $outputFolderStem . '-' . $i;
+      // get the parent folder of the case folder
+      // create a sibling output folder there
+      $caseFolder = $folderModel->load($inputParams['casesFolderId']);
+      $caseParentId = $caseFolder->getParentId();
+      $outputFolderDao = $folderModel->createFolder($outputFolderStem . '-' . $taskDao->getKey(), '', $caseParentId);
+      $configInputs['outputFolderId'] = $outputFolderDao->getFolderId();
+      $methodOutputFolderId = $outputFolderDao->getFolderId();
       }
-    */
-    $outputFolderIds = array();
-    foreach($configInputs['caseFolderIds'] as $caseFolderId)
+    else
       {
-      $outputFolderDao = $folderModel->createFolder($outputFolderStem . '-' . $taskDao->getKey(), '', $caseFolderId);
-      $outputFolderIds[] = $outputFolderDao->getFolderId();
+      $outputFolderIds = array();
+      foreach($configInputs['caseFolderIds'] as $caseFolderId)
+        {
+        $outputFolderDao = $folderModel->createFolder($outputFolderStem . '-' . $taskDao->getKey(), '', $caseFolderId);
+        $outputFolderIds[] = $outputFolderDao->getFolderId();
+        }
+      $configInputs['outputFolderIds'] = $outputFolderIds;  
+      $methodOutputFolderId = $inputParams['casesFolderId'];
       }
-    $configInputs['outputFolderIds'] = $outputFolderIds;  
-    
+
     $condorPostScriptPath = $this->getPostscriptPath();
     $configScriptStem = $this->getConfigScriptStem();
     $bmScript = $this->getBmScript();
     $executeComponent->executeScript($taskDao, $userDao, $condorPostScriptPath, $configScriptStem, $bmScript, $configInputs);
-  }
+    echo JsonComponent::encode(array('output_folder_id' => $methodOutputFolderId));
+    }
   
   
   

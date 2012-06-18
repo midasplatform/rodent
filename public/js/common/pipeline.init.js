@@ -94,7 +94,7 @@ midas.rodent.pipeline.onFinishCallback = function()
          {
          console.log(data);
          // now redirect to view the cases folder
-         window.location.replace($('.webroot').val()+'/folder/'+cases_folder_id);
+         window.location.replace($('.webroot').val()+'/folder/'+data.output_folder_id);
          },
        error: function(xhr, textStatus, errorThrown) {
            console.log("error");
