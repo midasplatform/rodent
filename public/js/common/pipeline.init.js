@@ -63,8 +63,16 @@ midas.rodent.pipeline.onFinishCallback = function()
              requestData[input.id] = input.checked; 
          }
      });
-     var suffix = prefix+'cases_suffix';
-     requestData[suffix] = $('#'+suffix).val();
+
+
+     //var suffix = prefix+'cases_suffix';
+     //requestData[suffix] = $('#'+suffix).val();
+
+     $.each($("."+prefix + "cases_suffix"), function(index, input) {
+         requestData[input.id] = input.value;
+     });
+
+
      $.each($(".pipelineparameter"), function(index, input) {
          if(input.type === "checkbox") {
              requestData[input.id] = input.checked;
@@ -134,12 +142,16 @@ midas.rodent.pipeline.onShowStepCallback = function(obj)  {
     var processStepType = json.processSteps[step_num]['type'];
     var processStepId = json.processSteps[step_num]['id'];
     var processStepTitle = json.processSteps[step_num]['title'];
+    var processStepDefault = json.processSteps[step_num]['default'];
   
     if(processStepType === "cases") {
         var id = prefix + processStepId;
-        //TODO get cases path from json
-        var cases_folder_name = json.inputs.casesFolderName;
-        midas.rodent.pipeline.selectionCallbacks[id] = midas.rodent.util.createCasesCallback(prefix, step_num, cases_folder_name);
+        var subFolders = json.inputs.casesFolderNames;
+        var subFolderVariables = json.inputs.caseFolderVariables;
+        midas.rodent.pipeline.selectionCallbacks[id] = midas.rodent.util.createCasesCallback(prefix, step_num, subFolders, subFolderVariables);
+
+
+        
         $('#'+id+'_button').click(function(){
             midas.loadDialog("selectfolder_outputfolder","/browse/selectfolder");
             midas.showDialog('Browse for Cases folder');
@@ -154,6 +166,19 @@ midas.rodent.pipeline.onShowStepCallback = function(obj)  {
             midas.showDialog('Browse for ' + processStepTitle + ' folder');
             midas.rodent.pipeline.currentBrowser = id;
         });
+        if(processStepDefault) {
+            midas.rodent.pipeline.currentBrowser = id;
+            var folder_name = processStepDefault['folder_path'];
+            var folder_id = processStepDefault['folder_id'];
+            var item_ids = processStepDefault['item_ids'];
+            console.log(item_ids);
+            folderSelectionCallback(folder_name, folder_id);
+            $.each(item_ids, function(index, item_id) {
+                var item_id_selector = '#' + prefix+"multiitem_"+processStepId+"_"+item_id;
+                console.log(item_id_selector);
+                $(item_id_selector).attr('checked','checked');
+            });
+        }
     }
     if(processStepType === "singleItems") {
         $.each(json.inputs.singleItems, function(itemId, item){

@@ -21,7 +21,7 @@ require_once BASE_PATH . '/modules/rodent/AppController.php';
 /** as controller*/
 abstract class Rodent_PipelineController extends Rodent_AppController
 {
-  public $_models = array('Item', 'Bitstream', 'ItemRevision', 'Assetstore', 'Folder');
+  public $_models = array('Item', 'Bitstream', 'ItemRevision', 'Assetstore', 'Folder', 'Community');
   public $_components = array('Export');
 
   // PIPELINE
@@ -82,7 +82,12 @@ abstract class Rodent_PipelineController extends Rodent_AppController
     
     $inputs = array("prefix" => $this->getPipelinePrefix());
     $inputs["cases"] = $this->getCasesSelection();
-    $inputs["casesFolderName"] = $this->getInputFolder();
+    
+    //$inputs["casesFolderName"] = $this->getInputFolder();
+    
+    $inputs["casesFolderNames"] = array_keys($this->getInputFolder());
+    $inputs["caseFolderVariables"] = $this->getInputFolder();
+    
     $inputs["multiItems"] = $this->getMultiItemSelections();
     $inputs["singleItems"] = $this->getSingleItemSelections();
     $inputs["parameters"] = $this->getParameters();
@@ -95,8 +100,48 @@ abstract class Rodent_PipelineController extends Rodent_AppController
     }
     if(array_key_exists("multiItems", $inputs)) {
         $multiItems = $inputs["multiItems"];
-        foreach($multiItems as $id => $title) {
-            $processSteps[$processStepInd++] = array('title' => $title, 'label'=>'Select '. $title, 'type' => 'multiItems', 'id' => $id);
+        foreach($multiItems as $id => $properties) {
+            $title = $properties['label'];
+            $currentMultiItem = array('title' => $title, 'label'=>'Select '. $title, 'type' => 'multiItems', 'id' => $id);
+
+            if(array_key_exists('default', $properties))
+              {
+              $defaultFolderId = $properties['default']['folder'];
+              $folder = $this->Folder->load($defaultFolderId);
+              //keep calling get root on the folder to build up the path
+              $namePath = $folder->getName();
+              $root = $folder;
+              $parent = $folder->getParent();
+              while($parent !== false && intval($parent->getKey()) > 0)
+                {
+                $community = $this->Community->getByFolder($parent);
+                if($community)
+                  {
+                  $namePath = $community->getName() . "/" . $namePath;  
+                  }
+                else
+                  {
+                  $namePath = $parent->getName() . "/" . $namePath;
+                  }
+                $root = $parent;
+                $parent = $parent->getParent();
+                }
+              $currentMultiItem['default'] = array('folder_path' => $namePath, 'folder_id' => $defaultFolderId, 'item_ids' => $properties['default']['items']);
+              }
+            // then get the items and add in their names
+            // also need their ids
+            // pass all their ids to the ui
+            // need to get all children items of that folder to populate
+            //$defaultItemIds = $properties['default_items'];
+            
+/*            
+    array("templatefiles" => 
+              array("label" =>"Template Files",
+                    "default" =>
+                        array("folder" => "569",
+                              "items" =>
+                                 array("1391", "1392")))); }            */
+            $processSteps[$processStepInd++] = $currentMultiItem;
         }
     }
     if(array_key_exists("singleItems", $inputs)) {
@@ -152,6 +197,7 @@ abstract class Rodent_PipelineController extends Rodent_AppController
     $multiitemPrefix = $pipelinePrefix . "multiitem_";
     $multiitemSubstrInd = strlen($multiitemPrefix);
     $caseFolders = array();
+    $caseSuffixes = array();
     $multiitems = array();
     foreach($inputParams as $inputParam => $value)
       {
@@ -165,7 +211,11 @@ abstract class Rodent_PipelineController extends Rodent_AppController
           }
         else if(strpos($inputParam, $caseFolderSuffix) === 0)
           {
-          $caseSuffix = $value;   
+          // split off the last part of the id, this is the variable name
+          // add this to the set of suffixes
+          $varName = substr($inputParam, $caseFolderSubstrInd+2);
+          $caseSuffixes[$varName] = $value;
+          //$caseSuffix = $value;   
           }
         else if(strpos($inputParam, $multiitemPrefix) === 0)
           {
@@ -207,10 +257,32 @@ abstract class Rodent_PipelineController extends Rodent_AppController
         }
       }
 
-   
+    // create a mapping of variable name to input folder
+    $inputFolders = $this->getInputFolder();
+    $varToFolder = array();
+    foreach($inputFolders as $inputFolder => $variables)
+      {
+      foreach($variables as $variable)
+        {
+        foreach($variable as $property => $propVal)
+          {
+          if($property === "varname")
+            {
+            $varToFolder[$propVal] = $inputFolder;  
+            }
+          }
+        }
+      }
+    
+    // specific export for the cases chosen, for each suffix property
+    foreach($caseSuffixes as $varName => $suffix)
+      {
+      $inputFolder = $varToFolder[$varName];  
+//      $executeComponent->exportCases($userDao, $taskDao, $configInputs, $caseFolders, $caseSuffix, $this->getInputFolder());  
+      $executeComponent->exportCases($userDao, $taskDao, $configInputs, $caseFolders, $varName, $suffix, $inputFolder);
+      }
       
-    // specific export for the cases chosen
-    $executeComponent->exportCases($userDao, $taskDao, $configInputs, $caseFolders, $caseSuffix, $this->getInputFolder());  
+      
 
     // specific export for the multiitems chosen
     $executeComponent->exportMultiitems($userDao, $taskDao, $configInputs, $multiitems);  

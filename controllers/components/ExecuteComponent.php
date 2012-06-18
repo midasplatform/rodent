@@ -143,7 +143,7 @@ class Rodent_ExecuteComponent extends AppComponent
     $exportComponent->exportBitstreams($userDao, $datapath, $itemIds, $symlink);
     }
 
-  public function exportCases($userDao, $taskDao, &$configInputs, $caseFolders, $suffix, $selectedSubfolderName)
+  public function exportCases($userDao, $taskDao, &$configInputs, $caseFolders, $varName, $suffix, $selectedSubfolderName)
     {
     $modelLoad = new MIDAS_ModelLoader();
     $folderModel = $modelLoad->loadModel('Folder');
@@ -190,10 +190,14 @@ class Rodent_ExecuteComponent extends AppComponent
     // a list of case folders
     // a case index for each case
     $configInputs['cases'] = $cases;
-    $configInputs['casesInputs'] = $caseInputs;
+    $configInputs[$varName] = $caseInputs;
     $configInputs['caseFolderIds'] = $caseFolders;
     $configInputs['caseInds'] = $caseIndices;
     }
+    
+    
+    
+    
 
     // specific export for the multiitems chosen
     public function exportMultiitems($userDao, $taskDao, &$configInputs, $multiitems) 
