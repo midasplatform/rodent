@@ -235,8 +235,8 @@ class Rodent_ExecuteComponent extends AppComponent
     // export the batchmake scripts
     $componentLoader = new MIDAS_ComponentLoader();
     $kwbatchmakeComponent = $componentLoader->loadComponent('KWBatchmake', 'batchmake');
-    $kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
-    $kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
+    $bmScripts = $kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
+    $kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), $bmScripts);
 
     // generate and run the condor dag
     $kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
