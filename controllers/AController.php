@@ -17,281 +17,44 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 =========================================================================*/
-/** as controller*/
-class Rodent_AController extends Rodent_AppController
+require_once BASE_PATH . '/modules/rodent/controllers/PipelineController.php';
+/** a controller*/
+class Rodent_AController extends Rodent_PipelineController
 {
-  public $_models = array('Item', 'Bitstream', 'ItemRevision', 'Assetstore', 'Folder');
-  public $_components = array('Export');
-// public $_moduleComponents = array('Executable', 'Job');
-// public $_moduleModels = array('Job');
 
-  protected $pipelinePrefix = "rodent_atlas_";
+  function getPipelinePrefix() { return "rodent_atlas_"; }
+  function getUiTitle() { return "Average Pipeline Wizard"; }
+  function getCasesSelection() { return array('id'=> "casesdirectory", 'label' => "Select the Cases Directory"); }
+//  function getMultiItemSelections() { return array("templatefiles" => "Template Files"); }
+// want all this next stuff to have a default
   
-  
-  
-  protected function exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $itemsForExport)
+  function getMultiItemSelections() { return array(); }
+                                 
+  function getSingleItemSelections() { return 
+      array("populationaveragefile" => array("label" => "Population Average File", "bitstreamCount" => "single"),
+            "segmentationfile" => array("label" => "Segmentation file", "bitstreamCount" => "single"),
+            "imagegridfile" => array("label" => "Image grid file", "bitstreamCount" => "single")); }
+  function getParameters()
     {
-    $itemIds = array();
-    foreach($itemsForExport as $configParam => $itemId)
-      {
-      $itemIds[] = $itemId;
-      }
-      
-    // export the items to the work dir data dir
-    $datapath = $taskDao->getWorkDir() . '/' . 'data';
-    if(!KWUtils::mkDir($datapath))
-      {
-      throw new Zend_Exception("couldn't create data export dir: ". $datapath);
-      }
-    $symlink = true;
-    $this->Component->Export->exportBitstreams($userDao, $datapath, $itemIds, $symlink);
-
-    // for each of these items, generate a path that points to a single bitstream
-    
-    // get the bitstream path, assuming latest revision of item, with one bitstream
-    // this seems somewhat wrong, as we are halfway recreating the export
-    // and dependent upon the export to work in a certain way for this to work
-    $modelLoad = new MIDAS_ModelLoader();
-    $itemModel = $modelLoad->loadModel('Item');
-   
-    $configParamsToBitstreamPaths = array();
-    foreach($itemsForExport as $configParam => $itemId)
-      {
-      $itemDao = $itemModel->load($itemId);
-      $revisionDao = $itemModel->getLastRevision($itemDao);
-      $bitstreamDaos = $revisionDao->getBitstreams();
-      if(empty($bitstreamDaos))
-        {
-        throw new Zend_Exception("Item ".$itemId." had no bitstreams.");
-        }
-      $imageBitstreamDao = $bitstreamDaos[0];
-      $exportedBitstreamPath = $datapath . '/' . $itemId . '/' . $imageBitstreamDao->getName();
-      $configParamsToBitstreamPaths[$configParam] = $exportedBitstreamPath;
-      }
-    return $configParamsToBitstreamPaths;
+    //TODO want to add in default value for parameters
+    return array("average" => array("type" => "boolean", "label" => "Recompute the average?", "default" => true),
+        "scalar" => array("type" => "boolean", "label" => "Is the input image a scalar image?"),
+        "scaled" => array("type" => "boolean", "label" => "Are the inputs scaled at 1,1,1?"),
+        "histogrammatch" => array("type" => "boolean", "label" => "Use histogram match?", "default" => true),
+        "radius" => array("type" => "text", "label" => "radius", "default" => "1"));
     }
+  function getSingleBitstreamItemParams() { return array("populationaveragefile" => "Population Average File", "segmentationfile" => "Segmentation file", "imagegridfile" => "Image grid file"); }
+  function getPostscriptPath() { return BASE_PATH . '/modules/rodent/library/py/a_condor_postscript.py'; }
+  function getConfigScriptStem() { return "a"; }
+  function getBmScript() { return "a1.pipeline.bms"; }
+  function getInputFolder() { return array(
+      "2-Registration" => array(
+          array("label"=> "inputs", "varname" => "casesInputs"),
+          array("label"=> "originals", "varname" => "casesOriginals"),
+          array("label"=> "dti", "varname" => "casesDTIs"),
+          array("label"=> "transform", "varname" => "casesTransforms")),
+      "3-SkullStripping-a" => array(
+          array("label"=> "mask", "varname" => "casesMasks"))); }
+  function getOutputFolderStem() { return array("cases_sibling" => "Average"); }
   
-  
-  protected function exportItemsToWorkDataDir($userDao, $taskDao, $itemIds)
-    {
-    // export the items to the work dir data dir
-    $datapath = $taskDao->getWorkDir() . '/' . 'data';
-    if(!KWUtils::mkDir($datapath))
-      {
-      throw new Zend_Exception("couldn't create data export dir: ". $datapath);
-      }
-    //$componentLoader = new MIDAS_ComponentLoader();
-    //$exportComponent = $this->$componentLoader->loadComponent('Export');
-    $symlink = true;
-    $this->Component->Export->exportBitstreams($userDao, $datapath, $itemIds, $symlink);
-    }
-  
-  
-  
-  
-  
-  
-  
-
-  /** init a job*/
-  function initAction()
-    {
-    $this->view->header = "Atlas Pipeline Wizard";
-    if(!$this->logged)
-      {
-      $this->haveToBeLogged();
-      return false;
-      }
-    $this->requireAdminPrivileges();
-    
-    
-    $folderSelections = array("outputdirectory" => "Output Directory",
-        "casesdirectory" => "Cases Directory",
-        "originalimages" => "Original Images");
-        //"externalatlasandprobmapdirectory" => "External atlas and probability map directory"
- 
-    $singleItemSelections = array("populationaverage" => "Computed population average",
-        "parcellation" => "Segmentation file",
-	"imagegrid" => "Image grid (e.g. Grid.nrrd)");
-    
-    $parameters = array(
-	"recalculateavg" => array("type" => "boolean", "label" => "Recalculating the average image?"),
-        "originalhasprefix" => array("type" => "boolean", "label" => "Does the original image have a prefix?"),
-        "scalar" => array("type" => "boolean", "label" => "Is the image scalar?"),
-        "scaled" => array("type" => "boolean", "label" => "Is the image scaled?"),
-        "histogrammatch" => array("type" => "boolean", "label" => "Using histogram match?"),
-        "rescalecenterversion" => array("type" => "select", "label" => "Version of rescale center", "options" => array("old","new")),
-        "atlasinputsuffix" => array("type" => "text", "label" => "Input suffix"),
-        "newmasktag" => array("type" => "text", "label" => "New mask suffix"),
-        "dtisuffix" => array("type" => "text", "label" => "DTI suffix"),
-        "transformsuffix" => array("type" => "text", "label" => "Transform suffix"),
-        "originalsuffix" => array("type" => "text", "label" => "Original image suffix"),
-        "mradius" => array("type" => "integer", "label" => "mradius"),
-    
-        "measure" => array("type" => "text", "label" => "Measure"),
-        "rangemax" => array("type" => "text", "label" => "RangeRax")
-			);
-    
-    $inputs = array("prefix" => $this->pipelinePrefix, "folders" => $folderSelections, "items" => $itemSelections, "parameters" => $parameters);
-    $this->view->inputs = $inputs;
-    $this->view->json['inputs'] = $inputs;
-    
-    
-    }
-
-  /**
-* start a unu job, via an ajax call.
-*/
-  public function startjobAction()
-    {
-    $this->disableLayout();
-    $this->disableView();
-  
-    // create a task
-    $userDao = $this->userSession->Dao;
-    $componentLoader = new MIDAS_ComponentLoader();
-    $kwbatchmakeComponent = $componentLoader->loadComponent('KWBatchmake', 'batchmake');
-    $taskDao = $kwbatchmakeComponent->createTask($userDao);
-    
-    // export any data needed by the pipeline from midas
-    $singleBitstreamItemParams = array("populationaverage" => "Computed population average",
-        "segmentation" => "Segmentation",
-	"imagegrid" => "Image grid");
-    
-    $singleBitstreamItemIds = array();
-
-    // TODO need to keep cleaning up these exports, just working through params one at a time
-    // as we develop the pipeline
-    
-    // first step is all items that have only one bitstream
-    $inputParams = $this->_getAllParams();
-    $configInputs = array();
-    $substrInd = strlen($this->pipelinePrefix);
-    foreach($inputParams as $inputParam => $value)
-      {
-      if(strpos($inputParam, $this->pipelinePrefix) === 0)
-        {
-        // collect all config inputs
-        $configInputs[substr($inputParam, $substrInd)] = $value;
-        // find the items needed to export
-        $paramName = substr($inputParam, $substrInd);
-        if(array_key_exists($paramName, $singleBitstreamItemParams))
-          {
-          $singleBitstreamItemIds[$paramName] = $value;
-          }
-        }
-      }
-    
-    $configParamsToBitstreamPaths = $this->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $singleBitstreamItemIds);
-
-    // replace any exported item config params with their path values
-    foreach($configParamsToBitstreamPaths as $configInput => $bitstreamPath)
-      {
-      $configInputs[$configInput] = $bitstreamPath;
-      }
-    
-    
-    // now that we have created a task, create a new folder for this task under
-    // the outputFolder
-    $outputFolderId = $configInputs["outputdirectory"];
-    $modelLoad = new MIDAS_ModelLoader();
-    $folderModel = $modelLoad->loadModel('Folder');
-    $outputFolderDao = $folderModel->createFolder('A task ' . $taskDao->getKey() . ' Output', '', $outputFolderId);
-    // now set the outputFolderId to be the newly created one
-    $outputFolderId = $outputFolderDao->getKey();
-    
-    // generate and export midas client communication params
-    $executeComponent = $componentLoader->loadComponent('Execute', 'rodent');
-    $executeComponent->generatePythonConfigParams($taskDao, $userDao);
-
-    
-    $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/a_condor_postscript.py';
-    $configScriptStem = "a";
-
-    $executeComponent->generateBatchmakeConfig($taskDao, $configInputs, $condorPostScriptPath, $configScriptStem);
-  
-    // export the batchmake scripts
-    $bmScript = "a.pipeline.bms";
-    $kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
-    $kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
-
-    // generate and run the condor dag
-    $kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
-    $dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
-    $kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
-    
-    
-    
-/* $bmScript = "unu.bms";
-$kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
-$kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
-$kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
-$dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
-$kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
-*/
-    
-    
-    
-    
-    // todo export the input
-    // can either do it here or pass down enough info to do it in a python script
-    
-    
-     // outputdirectory
-      
-// $rest = substr("abcdef", -3, 1);
-    //echo JsonComponent::encode($taskDao);
-        //$this->view->json['inputParams'] = $inputParams;
-  
-/*
-$inputItemId = $this->_getParam("inputItemId");
-$outputFolderId = $this->_getParam("outputFolderId");
-$aValue = $this->_getParam("aValue");
-$pValue = $this->_getParam("pValue");
-
-
-// export the input item
-$itemIds = array($inputItemId);
-$this->exportItemsToWorkDataDir($userDao, $taskDao, $itemIds);
-
-
-$condorPostScriptPath = BASE_PATH . '/modules/rodent/library/unu_condor_postscript.py';
-$configScriptStem = "unu";
-// get the bitstream path, assuming latest revision of item, one bitstream in item
-// don't really like this, halfway recreating the export, and dependent upon
-// the export to work in a certain way for this to work
-$datapath = $taskDao->getWorkDir() . 'data/';
-$modelLoad = new MIDAS_ModelLoader();
-$itemModel = $modelLoad->loadModel('Item');
-$itemDao = $itemModel->load($inputItemId);
-$revisionDao = $itemModel->getLastRevision($itemDao);
-$bitstreamDaos = $revisionDao->getBitstreams();
-if(empty($bitstreamDaos))
-{
-throw new Zend_Exception("This item had no bitstreams.");
-}
-$imageBitstreamDao = $bitstreamDaos[0];
-$exportedBitstreamPath = $datapath . $inputItemId . '/' . $imageBitstreamDao->getName();
-$appTaskConfigProperties = array();
-$appTaskConfigProperties['cfg_inputImagePath'] = $exportedBitstreamPath;
-$appTaskConfigProperties['cfg_outputFolderId'] = $outputFolderId;
-$appTaskConfigProperties['cfg_aValue'] = $aValue;
-$appTaskConfigProperties['cfg_pValue'] = $pValue;
-
-$executeComponent->generateBatchmakeConfig($taskDao, $appTaskConfigProperties, $condorPostScriptPath, $configScriptStem);
-$bmScript = "unu.bms";
-$kwbatchmakeComponent->preparePipelineScripts($taskDao->getWorkDir(), $bmScript);
-$kwbatchmakeComponent->preparePipelineBmms($taskDao->getWorkDir(), array($bmScript));
-$kwbatchmakeComponent->compileBatchMakeScript($taskDao->getWorkDir(), $bmScript);
-$dagScript = $kwbatchmakeComponent->generateCondorDag($taskDao->getWorkDir(), $bmScript);
-$kwbatchmakeComponent->condorSubmitDag($taskDao->getWorkDir(), $dagScript);
-
-*/
-  }
-    
-  
-  
-
-
-
 }//end class

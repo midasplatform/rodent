@@ -122,11 +122,21 @@ $processSteps = $this->processSteps;
         {
         if($parameterDef['type'] === 'boolean')
           {
-          echo '<input type="checkbox" class="pipelineparameter" id="'. $prefix . $parameterId .'" >'.$parameterDef['label'] . '<br/>';
+          echo '<input type="checkbox" class="pipelineparameter" id="'. $prefix . $parameterId .'"';
+          if(isset($parameterDef['default']) && $parameterDef['default'] === true)
+            {
+            echo ' checked="checked" ';
+            }
+          echo '>'.$parameterDef['label'] . '<br/>';
           }
         elseif($parameterDef['type'] === 'text' )
           {
-          echo '<input type="text" class="pipelineparameter" id="'. $prefix . $parameterId .'">'.$parameterDef['label'] . '<br/>';
+          echo '<input type="text" class="pipelineparameter" id="'. $prefix . $parameterId .'" ';
+          if(isset($parameterDef['default']))
+            {
+            echo ' value="'.$parameterDef['default'].'" ';
+            }
+          echo '>'.$parameterDef['label'] . '<br/>';
           }
         elseif($parameterDef['type'] === 'integer')
           {
