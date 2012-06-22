@@ -303,34 +303,46 @@ abstract class Rodent_PipelineController extends Rodent_AppController
  
     // create output folders
       
-    $outputFolder = $this->getOutputFolderStem(); 
-    $outputFolderType = $outputFolder["output_folder_type"];
-    $outputFolderStem = $outputFolder["name"];
     $modelLoad = new MIDAS_ModelLoader();
     $folderModel = $modelLoad->loadModel('Folder');
 
-    if($outputFolderType == "cases_sibling")
+    $outputFolders = $this->getOutputFolderStem(); 
+    foreach($outputFolders as $outputFolder)
       {
-      // get the parent folder of the case folder
-      // create a sibling output folder there
-      $caseFolder = $folderModel->load($inputParams['casesFolderId']);
-      $caseParentId = $caseFolder->getParentId();
-      $outputFolderDao = $folderModel->createFolder($outputFolderStem . '-' . $taskDao->getKey(), '', $caseParentId);
-      $configInputs['outputFolderId'] = $outputFolderDao->getFolderId();
-      $methodOutputFolderId = $outputFolderDao->getFolderId();
-      }
-    else
-      {
-      $outputFolderIds = array();
-      foreach($configInputs['caseFolderIds'] as $caseFolderId)
-        {
-        $outputFolderDao = $folderModel->createFolder($outputFolderStem . '-' . $taskDao->getKey(), '', $caseFolderId);
-        $outputFolderIds[] = $outputFolderDao->getFolderId();
-        }
-      $configInputs['outputFolderIds'] = $outputFolderIds;  
-      $methodOutputFolderId = $inputParams['casesFolderId'];
-      }
+      $outputFolderType = $outputFolder["output_folder_type"];
+      $outputFolderStem = $outputFolder["name"];
 
+      if($outputFolderType == "cases_sibling")
+        {
+        // get the parent folder of the case folder
+        // create a sibling output folder there
+        $caseFolder = $folderModel->load($inputParams['casesFolderId']);
+        $caseParentId = $caseFolder->getParentId();
+        $outputFolderDao = $folderModel->createFolder($outputFolderStem . '-' . $taskDao->getKey(), '', $caseParentId);
+        $configInputs['sibling_outputFolderId'] = $outputFolderDao->getFolderId();
+
+        if(array_key_exists("redirect", $outputFolder))
+          {
+          $methodOutputFolderId = $outputFolderDao->getFolderId();
+          }
+        }
+      else if($outputFolderType === "cases_child")
+        {
+        $outputFolderIds = array();
+        foreach($configInputs['caseFolderIds'] as $caseFolderId)
+          {
+          $outputFolderDao = $folderModel->createFolder($outputFolderStem . '-' . $taskDao->getKey(), '', $caseFolderId);
+          $outputFolderIds[] = $outputFolderDao->getFolderId();
+          }
+        $configInputs['cases_outputFolderIds'] = $outputFolderIds;  
+        if(array_key_exists("redirect", $outputFolder))
+          {
+          $methodOutputFolderId = $inputParams['casesFolderId'];
+          }
+        }
+      }
+        
+      
     $condorPostScriptPath = $this->getPostscriptPath();
     $configScriptStem = $this->getConfigScriptStem();
     $bmScript = $this->getBmScript();

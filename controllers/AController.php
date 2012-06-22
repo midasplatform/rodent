@@ -55,6 +55,8 @@ class Rodent_AController extends Rodent_PipelineController
           array("label"=> "transform", "varname" => "casesTransforms")),
       "3-SkullStripping-a" => array(
           array("label"=> "mask", "varname" => "casesMasks"))); }
-  function getOutputFolderStem() { return array("output_folder_type" => "cases_sibling", "name" => "Average"); }
+  function getOutputFolderStem() { return array(
+      array("output_folder_type" => "cases_sibling", "name" => "Average", "redirect" => true),
+      array("output_folder_type" => "cases_child", "name" => "4-Average")); }
   
 }//end class
