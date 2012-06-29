@@ -55,6 +55,20 @@
 			</Parameter>
 			<Parameter>
 				<Type>1</Type>
+				<Name>div</Name>
+				<Value>-div</Value>
+				<External>0</External>
+				<Optional>1</Optional>
+				<SubParameter>
+					<Type>4</Type>
+					<Name>div</Name>
+					<Value></Value>
+					<External>0</External>
+					<Optional>0</Optional>
+				</SubParameter>
+                        </Parameter>
+			<Parameter>
+				<Type>1</Type>
 				<Name>outfile</Name>
 				<Value>-outfile</Value>
 				<External>0</External>

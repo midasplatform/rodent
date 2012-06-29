@@ -6,6 +6,39 @@
                 <Parameters>
                        <Parameter>
                                 <Type>1</Type>
+                                <Name>spacing</Name>
+                                <Value>spacing</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>spacingInputImage</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>spacingOutputImage</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>spacingReferenceImage</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                       </Parameter>
+                       <Parameter>
+                                <Type>1</Type>
+                                <Name>direction</Name>
+                                <Value>direction</Value>
+                                <External>0</External>
+                       <Parameter>
+                                <Type>1</Type>
                                 <Name>size</Name>
                                 <Value>size</Value>
                                 <External>0</External>
@@ -41,6 +74,20 @@
                                 <SubParameter>
                                         <Type>4</Type>
                                         <Name>output</Name>
+                                        <Value></Value>
+                                        <External>0</External>
+                                        <Optional>1</Optional>
+                                </SubParameter>
+                       </Parameter>
+                       <Parameter>
+                                <Type>1</Type>
+                                <Name>iso</Name>
+                                <Value>iso</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                                <SubParameter>
+                                        <Type>4</Type>
+                                        <Name>iso</Name>
                                         <Value></Value>
                                         <External>0</External>
                                         <Optional>1</Optional>
