@@ -1,0 +1,34 @@
+echo()
+
+Set (prefix TRUE)
+Set (rescale NEW)
+Set (measure MI)
+Set (rangemax 32)
+Int(${step})
+include( a.config.bms )
+####################adapt to MIDAS######################################
+set (CASES ${cases})
+
+set (IMAGE_GRID ${imagegridfile})
+set (Recalculate_avg ${average})
+set (Original_has_prefix ${prefix})
+set (HISTOGRAM_MATCH ${histogrammatch})
+set (IS_SCALED ${rescale})
+set (Mradius ${radius})
+set (Measure ${measure})
+set (AffregParam ${rangemax})
+set (dir ${cfg_output_directory}/APipelineOut)
+set (outputDir ${dir})
+set (atlasProcessDir ${dir}/Average)
+set (step 0)
+### setting NEW_MASK_TAG
+GetParam(OneMask ${casesMasks} 1)
+GetParam(OneCase ${cases} 1)
+RegEx ( WithoutPath ${OneMask} '/.+/' REPLACE '' )
+RegEx ( NEW_MASK_TAG ${WithoutPath} ${OneCase} REPLACE '' ) 
+
+
+####################set up variables#####################################
+include( a2.pipeline.bms )
+####################compute atlas###################################################
+include( a3.pipeline.bms )

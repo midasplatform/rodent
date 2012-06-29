@@ -1,0 +1,253 @@
+############Include needed files#######################
+# properties from midas
+include( w.dummy.bms)
+
+set(CASES ${cases})
+set(USE_INV_HFIELD ${usinghfield})
+set(LabelMapsToWarp ${labelmapsfiles})
+
+GetParam(OneCaseMask ${casesMasks} 0)
+GetParam(OneCase ${cases} 0)
+RegEx ( WithoutPath ${OneCaseMask} '/.+/' REPLACE '')
+RegEx ( NEW_MASK_TAG ${WithoutPath} ${OneCase} REPLACE '')
+
+
+set(TEMPLATE_MASK ${templatemaskfile})
+set(Template_Image ${templatefile})
+set(PROCESS_SUBDIR 'Warping')
+
+GetParam(OneCaseWarp ${casesWarps} 0)
+RegEx (WithoutPath ${OneCaseWarp} '/.+/' REPLACE '')
+RegEx (WARP_INPUT_SUFFIX ${WithoutPath} ${OneCase} REPLACE '')
+
+GetParam(OneInvHField ${casesHFields} 0)
+RegEx ( WithoutPath ${OneInvHField} '/.+/' REPLACE '')
+RegEx ( InvHField_Suffix ${WithoutPath} ${OneCase} REPLACE '')
+
+#set( ${populationatlasfile})
+#set( ${segmentationfile})
+set(IterationNumber ${iterationnumber})
+
+set( tempDir ${cfg_output_directory}/temp)
+set( dir ${cfg_output_directory}/Warping)
+set(OUTPUT_PRE_SUBDIR '')  
+
+set( template ${Template_Image} )
+set( template_mask_filtered '' )
+MakeDirectory( ${tempDir} )
+set( Mask_reg '' )
+
+
+
+
+
+if( ${USE_INV_HFIELD} == FALSE && ${TEMPLATE_MASK} != '' )
+
+
+
+
+  #######Mask template just in case it wasn't
+  set( template_masked ${tempDir}/template_masked.nii.gz )
+
+
+
+ # set( Cmd ${ImageMath} ${template} -mask ${TEMPLATE_MASK} -type float -outfile ${template_masked} )      
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${template})
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outputfile ${template_masked})
+      SetAppOption(imageMath.mask 1)
+      SetAppOption(imageMath.mask.mask ${TEMPLATE_MASK})
+      SetAppOption(imageMath.type 1)
+      SetAppOption(imageMath.type.giveType 'float')
+
+
+  echo( ${imageMath} )
+  run( output ${imageMath} )
+  echo( ${output} )
+
+  set( template ${template_masked} )
+endif( ${USE_INV_HFIELD} == FALSE && ${TEMPLATE_MASK} != '' )
+
+set(Incrementation 0)
+
+ForEach( i ${CASES} )
+
+  set(${Incrementation} 1)
+
+  ######################Mask case image###########################
+  set (OutSubjDir ${dir}/${OUTPUT_PRE_SUBDIR}/${i})
+  
+#  set (InSubjDir ${dir}/${INPUT_PRE_SUBDIR}/${i}/${INPUT_POST_SUBDIR} )
+  GetParam(OneCase ${casesInputs} ${Incrementation})
+  echo('One case = ' ${OneCase})
+  RegEx ( WithoutPath ${OneCase} '/.+/' REPLACE '')
+  echo('Without Path = ' ${WithoutPath})
+  RegEx ( InSubjDir ${OneCase} ${WithoutPath} REPLACE '') 
+  
+  MakeDirectory( ${OutSubjDir}/${PROCESS_SUBDIR} )
+
+  Set( image ${InSubjDir}/${i}${WARP_INPUT_SUFFIX} )
+
+  #set( ResampledImage ${OutSubjDir}/${PROCESS_SUBDIR}/${i}_${name} )
+  SetApp(rv2EndOfScript @ResampleVolume2)
+#  SetAppOption(rv2EndOfScript.inputVolume ${template})
+#  SetAppOption(rv2EndOfScript.outputVolume ${ResampledImage})
+  SetAppOption(rv2EndOfScript.interpolationType 1)
+  SetAppOption(rv2EndOfScript.interpolationType.interpolationType 'nn')
+ 
+
+
+  if( ${USE_INV_HFIELD} == TRUE )
+    set( hfield -H ${InSubjDir}/${i}${InvHField_Suffix} )
+    SetAppOption(rv2EndOfScript.referenceVolume 1)
+    SetAppOption(rv2EndOfScript.referenceVolume.referenceVolume ${image})
+    SetAppOption(rv2EndOfScript.deffield 1)
+    SetAppOption(rv2EndOfScript.deffield.deffield ${InSubjDir}/${i}${InvHField_Suffix})
+  else( ${USE_INV_HFIELD} == TRUE )
+    #######Mask input image
+    Set( mask ${InSubjDir}/${i}${NEW_MASK_TAG} )
+    Set( MaskedImage ${tempDir}/${i}_MaskedImage.nii.gz )
+ #   Set( Cmd ImageMath ${image} -mask ${mask} -outfile ${MaskedImage} -type float )
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${image})
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outputfile ${MaskedImage})
+      SetAppOption(imageMath.mask 1)
+      SetAppOption(imageMath.mask.mask ${mask})
+      SetAppOption(imageMath.type 1)
+      SetAppOption(imageMath.type.giveType 'float')
+
+    echo( ${imageMath} )
+    run( output ${imageMath} )
+    echo( ${output} )
+
+    ########Initial registration
+    set( InitialTransform ${tempDir}/${i}_initialTransform.txt )
+   # Set( Cmd ${RegisterImages} --initialization CentersOfMass --saveTransform ${InitialTransform} --registration Initial ${MaskedImage} ${template} )
+      SetApp(registerImages @RegisterImages)
+      SetAppOption(registerImages.initialization 1)
+      SetAppOption(registerImages.initialization.initialization 'CentersOfMass')
+      SetAppOption(registerImages.saveTransform 1)
+      SetAppOption(registerImages.saveTransform.saveTransform ${InitialTransform})
+      SetAppOption(registerImages.registration 1)
+      SetAppOption(registerImages.registration.registration 'Initial')
+      SetAppOption(registerImages.fixedImage ${MaskedImage})
+      SetAppOption(registerImages.movingImage ${template})
+
+    echo( ${registerImages} )
+    run( output ${registerImages} )
+    echo( ${output} )
+
+    set( InitialTransformGrid ${tempDir}/${i}_template_initialTransformGrid.nii.gz )
+   # set( Cmd ${ITKTransformTools} size ${template} ${InitialTransform} --grid ${InitialTransformGrid} )      
+      SetApp(itkTransformTools @ITKTransformTools)
+      SetAppOption(itkTransformTools.size 1)
+      SetAppOption(itkTransformTools.size.sizeInputImage ${template})
+      SetAppOption(itkTransformTools.size.sizeInitTransform ${InitialTransform})
+      SetAppOption(itkTransformTools.grid 1)
+      SetAppOption(itkTransformTools.grid.sizeGridFile ${InitialTransformGrid})
+    echo( ${itkTransformTools} )
+    run( output ${itkTransformTools} )
+    echo( ${output} )
+
+    set( InitialTemplate ${tempDir}/${i}_initialTemplate.nii.gz )
+    set( Cmd ${ResampleVolume2} -R ${InitialTransformGrid} -f ${InitialTransform} ${template} ${InitialTemplate} -i nn )
+      SetApp(rv2 @ResampleVolume2)
+      SetAppOption(rv2.referenceVolume 1)
+      SetAppOption(rv2.referenceVolume.referenceVolume ${InitialTransformGrid})
+      SetAppOption(rv2.transformationFile 1)
+      SetAppOption(rv2.transformationFile.transformationFile ${InitialTransform})
+      SetAppOption(rv2.inputVolume ${template})
+      SetAppOption(rv2.outputVolume ${InitialTemplate})
+      SetAppOption(rv2.interpolationType 1)
+      SetAppOption(rv2.interpolationType.interpolationType 'nn')
+    echo( ${rv2} )
+    run( output ${rv2} )
+    echo( ${output} )
+  
+    #####################################################
+    #######################ANTS##########################
+    #####################################################
+    if( ${TEMPLATE_MASK} != '' )
+      set( InitialMask ${tempDir}/${i}_initialMask.nii.gz )
+      set( Cmd ${ResampleVolume2} -R ${InitialTransformGrid} -f ${InitialTransform} ${TEMPLATE_MASK} ${InitialMask} -i nn )
+      SetApp(rv2 @ResampleVolume2)
+      SetAppOption(rv2.referenceVolume 1)
+      SetAppOption(rv2.referenceVolume.referenceVolume ${InitialTransformGrid})
+      SetAppOption(rv2.transformationFile 1)
+      SetAppOption(rv2.transformationFile.transformationFile ${InitialTransform})
+      SetAppOption(rv2.inputVolume ${TEMPLATE_MASK})
+      SetAppOption(rv2.outputVolume ${InitialMask})
+      SetAppOption(rv2.interpolationType 1)
+      SetAppOption(rv2.interpolationType.interpolationType 'nn')
+    echo( ${rv2} )
+    run( output ${rv2} )
+    echo( ${output} )
+
+      set( Mask_reg -m MSQ[${mask},${InitialMask},1,0] )
+    endif( ${TEMPLATE_MASK} != '' )
+
+    GetFilename( template_TAG ${Template_Image} NAME_WITHOUT_EXTENSION )
+    set( NII_FILE_PREFIX ${OutSubjDir}/${PROCESS_SUBDIR}/${i}_to_${template_TAG}_ANTS )
+    echo('NII file prefix ' ${NII_FILE_PREFIX})
+    set( AFFINE_FILE ${NII_FILE_PREFIX}Affine.txt )
+    set( WARP_FILE ${NII_FILE_PREFIX}Warp.nii.gz )
+    set (bin_number 32)
+    set (metricsCommandLine 'MI['${MaskedImage}', '${InitialTemplate}', 1, 32]')
+    set (diff_Elast_Cmdtext '-r Gauss[1,0] -t SyN[0.25]')
+
+  #  set ( AntsCmd ${ANTS} 3 ${Mask_reg} -m MI[${MaskedImage}, ${InitialTemplate}, 1, ${bin_number}] -i ${IterationNumber} -r Gauss[1,0] -t SyN[0.25] -o ${NII_FILE_PREFIX} )
+
+        SetApp(ants @ANTS)
+        SetAppOption(ants.dimension '3')
+        SetAppOption(ants.metrics 1)
+        SetAppOption(ants.metrics.metricsCommand ${metricsCommandLine})
+        SetAppOption(ants.mask_add_Cmd ${Mask_reg})
+        SetAppOption(ants.diff_Elast_Cmd ${diff_Elast_Cmdtext})
+        echo('diff elast cmd text = ' ${diff_Elast_Cmdtext})
+        SetAppOption(ants.output 1)
+        SetAppOption(ants.output.outputfile ${NII_FILE_PREFIX})
+    echo( ${ants} )
+    run( output ${ants} )
+    echo( ${output} )
+
+   #####Warp#####################
+    Set( template_WARP ${tempDir}/${template_TAG}_ANTSWarp.nii.gz )
+    set( WarpCmd ${WarpImageMultiTransform} 3 ${template} ${template_WARP} ${WARP_FILE} ${AFFINE_FILE} -R ${MaskedImage} )
+        SetApp(warp @WarpImageMultiTransform)
+        SetAppOption(warp.dimension '3')
+        SetAppOption(warp.input  ${template})
+        SetAppOption(warp.output ${template_WARP})
+        SetAppOption(warp.warpFile ${WARP_FILE})
+        SetAppOption(warp.affineFile ${AFFINE_FILE})
+        SetAppOption(warp.reference 1)
+        SetAppOption(warp.reference.reference ${MaskedImage})
+    echo( ${warp} )
+    Run( output ${warp} )
+    echo( ${output} )
+
+    set( hfield --hfieldtype displacement -H ${WARP_FILE} )
+
+    SetAppOption(rv2EndOfScript.referenceVolume 1)
+    SetAppOption(rv2EndOfScript.referenceVolume.referenceVolume ${image})
+    SetAppOption(rv2EndOfScript.typeOfField 1)
+    SetAppOption(rv2EndOfScript.typeOfField.typeOfField 'displacement')
+    SetAppOption(rv2EndOfScript.deffield 1)
+    SetAppOption(rv2EndOfScript.deffield.deffield ${WARP_FILE})
+  endif( ${USE_INV_HFIELD} == TRUE )
+  #####Resample atlas############
+  ForEach(j ${LabelMapsToWarp} )
+    GetFilename( name ${j} NAME )
+    set( ResampledImage ${OutSubjDir}/${PROCESS_SUBDIR}/${i}_${name} )
+   # set( Cmd ${ResampleVolume2} ${AtlasDir}/${j} ${ResampledImage} -i nn -R ${image} ${hfield} )
+    SetAppOption(rv2EndOfScript.inputVolume ${template})
+    SetAppOption(rv2EndOfScript.outputVolume ${ResampledImage})
+  
+   
+    echo( ${rv2EndOfScript} )
+    run( output ${rv2EndOfScript} )
+    echo( ${output} )
+  EndForEach(j ${LabelMapsToWarp} )
+EndForEach( i ${CASES} )
+

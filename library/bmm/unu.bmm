@@ -6,6 +6,13 @@
                 <Parameters>
                        <Parameter>
                                 <Type>1</Type>
+                                <Name>quantize</Name>
+                                <Value>quantize</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                       </Parameter>
+                       <Parameter>
+                                <Type>1</Type>
                                 <Name>convert</Name>
                                 <Value>convert</Value>
                                 <External>0</External>

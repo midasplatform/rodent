@@ -1,0 +1,39 @@
+include(st.dummy.bms)
+
+set(CASES ${cases})
+set(iteration 0)
+set(PROCESS_SUBDIR '')
+set(LabelMapsSuffix ${labelssuffixes})
+Set(STAT_FILE_SUFFIX ${statssuffixes})
+
+ForEach( i ${CASES} )
+  ######################Mask case image###########################
+#  set (OutSubjDir ${dir}/${OUTPUT_PRE_SUBDIR}/${i})
+  set (OutSubjDir ${cfg_output_directory}/Stats/${i})
+#  set (InSubjDir ${dir}/${INPUT_PRE_SUBDIR}/${i}/${INPUT_POST_SUBDIR} )
+  GetParam(OneCase ${casesstats} ${iteration})
+  RegEx(WithoutPath ${OneCase} '/.+/' REPLACE '')
+  RegEx(InSubjDir ${OneCase} ${WithoutPath} REPLACE '')
+  
+  MakeDirectory( ${OutSubjDir}/${PROCESS_SUBDIR} )
+
+  #####Resample atlas############
+  ForEach(j ${LabelMapsSuffix} )
+    set( ResampledImage ${InSubjDir}/${i}${j} )
+
+    foreach( k ${STAT_FILE_SUFFIX} )
+      GetFilename( name ${j} NAME_WITHOUT_EXTENSION )
+      GetFilename( k_noext ${k} NAME_WITHOUT_EXTENSION )
+    #  set( Cmd ${ImageStat} ${InSubjDir}/${i}${k} -label ${ResampledImage} -outbase ${OutSubjDir}/${PROCESS_SUBDIR}/${i}${name}${k_noext} )
+      SetApp(imageStat @ImageStat)
+      SetAppOption(imageStat.infile ${InSubjDir}/${i}${k})
+      SetAppOption(imageStat.label 1)
+      SetAppOption(imageStat.label.label ${ResampledImage})
+      SetAppOption(imageStat.outbase 1)
+      SetAppOption(imageStat.outbase.outbase ${OutSubjDir}/${PROCESS_SUBDIR}/${i}${name}${k_noext})
+      Run( output ${imageStat} )
+      Echo( ${output} )
+    endforeach( k ${STAT_FILE_SUFFIX} )
+  EndForEach(j ${LabelMapsSuffix} )
+  Inc(${iteration} 1)
+EndForEach( i ${CASES} )
