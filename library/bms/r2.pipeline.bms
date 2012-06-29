@@ -1,0 +1,104 @@
+
+#                           + "/DTIPipeline.bms";
+MakeDirectory ( ${outputDirectory})
+
+
+
+######### setting variables
+Set( INPUTDIR ${InSubjDir})
+
+#  script += "Set( TEMPLATE " + templateFile + " )\n" ;
+Set( TEMPLATE ${TEMPLATE_FILE}) 
+
+#  script += "Set( TEMPLATEDIR " + templateDir + " )\n" ;
+Set( TEMPLATEDIR ${TEMPLATE_DIR})
+
+#  script += "Set( OUTPUTDIR " + outputDir + " )\n" ;
+Set( OUTPUTDIR ${outputDirectory})
+
+#  script += "Set( REGTYPE \'" + registrationType + "\' )\n" ; NB : hardcoded in xml
+Set( REGTYPE 'MD')
+
+#  script += "Set( INTERPOLATION \'" + interpolationType + "\' )\n" ; NB : hardcoded in xml
+Set( INTERPOLATION 'linear')
+
+### the variables that are optional strings need verification
+
+#  script += SetOptionalString( tempDir , "TEMPDIR" ) ;
+If(${tempDir} != '')
+  Set( TEMPDIR ${tempDir})
+Else(${tempDir} != '')
+  Set( TEMPDIR '')
+EndIf(${tempDir} != '')
+
+# -> if not void, removes extension and gives variable as a script parameter
+If(${im1} != '')
+  GetFilename( IM1 ${im1} NAME_WITHOUT_EXTENSION )
+  GetFilename( pointExt ${im1} EXTENSION)
+  RegEx(EXT_M1 ${pointExt} '.' REPLACE '')
+Else(${im1} != '')
+  Set(IM1 '')
+  Set(EXT_IM1 '')
+EndIf(${im1} != '')
+
+#  script += SetOptionalString( im2 , "IM2" ) ;
+If(${im2} != '')
+  GetFilename( IM2 ${im2} NAME_WITHOUT_EXTENSION )
+  GetFilename( pointExt ${im2} EXTENSION)
+  RegEx(EXT_M2 ${pointExt} '.' REPLACE '')
+Else(${im2} != '')
+  Set(IM2 '')
+  Set(EXT_IM2 '')
+EndIf(${im2} != '')
+
+#  script += SetOptionalString( im3 , "IM3" ) ;
+If(${im3} != '')
+  GetFilename( IM3 ${im3} NAME_WITHOUT_EXTENSION )
+  GetFilename( pointExt ${im3} EXTENSION)
+  RegEx(EXT_M3 ${pointExt} '.' REPLACE '')
+Else(${im3} != '')
+  Set(IM3 '')
+  Set(EXT_IM3 '')
+EndIf(${im3} != '')
+
+#  script += SetOptionalString( imnn1 , "IMNN1" ) ;
+If(${imnn1} != '')
+  GetFilename( IMNN1 ${imnn1} NAME_WITHOUT_EXTENSION )
+  GetFilename( pointExt ${imnn1} EXTENSION)
+  RegEx(EXT_MNN1 ${pointExt} '.' REPLACE '')
+Else(${imnn1} != '')
+  Set(IMNN1 '')
+  Set(EXT_IMNN1 '')
+EndIf(${imnn1} != '')
+
+#  script += SetOptionalString( imnn2 , "IMNN2" ) ;
+If(${imnn2} != '')
+  GetFilename( IMNN2 ${imnn2} NAME_WITHOUT_EXTENSION )
+  GetFilename( pointExt ${imnn2} EXTENSION)
+  RegEx(EXT_MNN2 ${pointExt} '.' REPLACE '')
+Else(${imnn2} != '')
+  Set(IMNN2 '')
+  Set(EXT_IMNN2 '')
+EndIf(${imnn2} != '')
+
+#  script += SetOptionalString( rootName , "ROOTNAME" ) ;
+If(${rootName} != '')
+  Set( ROOTNAME ${rootName})
+Else(${rootName} != '')
+  Set( ROOTNAME '')
+EndIf(${rootName} != '')
+
+#  script += SetBOOL( biasCorrection , "BiasCorrection" );
+Set( BiasCorrection ${BIAS})
+
+#  script += SetBOOL( copyInputImages , "COPY_INPUTS_IMAGES" ) ; NB : hardcoded in xml
+Set( COPY_INPUTS_IMAGES TRUE)
+
+#  script += SetBOOL( donotcopyInputTransforms , "DONT_COPY_INPUTS_TRANS" ) ; NB : hardcoded in xml
+Set( DONT_COPY_INPUTS_TRANS FALSE)
+
+######### Including the batchmake scripts 
+#  script += "include( " ;
+#  script += BatchMake_WRAPPED_APPLICATION_DIR ;
+#  script += "/BatchMakeScript.bms )\n" ;
+include( r3.pipeline.bms)
