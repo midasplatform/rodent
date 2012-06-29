@@ -1,0 +1,369 @@
+### The script uses:
+#- ResampleDTIlogEuclidean
+#- ImageMath
+#- ResampleVolume2
+#- dtiaverage
+#- unu
+#- dtiprocess
+
+
+
+echo()
+echo('a5')
+echo()
+
+
+#############################################################################
+###################Transform original DTIs to atlas###########################
+##############################################################################
+set(iteration5 0)
+foreach( i ${CASES} )
+  GetParam(OneCase ${casesInputs} ${iteration5})
+  GetParam(OneDTI ${casesDTIs} ${iteration5})
+  RegEx(WithoutPath ${OneCase} '/.+/' REPLACE '')
+  RegEx(InSubjDir ${OneCase} ${WithoutPath} REPLACE '')
+  Set (OutSubjDir ${outputDir}/${i}/Average)
+  echo()
+  echo('OutSubjDir = ' ${OutSubjDir})
+  echo()
+  if( ${IS_SCALED} == TRUE )
+    if( ${RESCALE_CENTER_VERSION} == OLD )
+      #change DTI spacing
+      set( dtichSp ${atlasProcessDir}/${i}${DTI_TAG}_chSp.nrrd )
+      set( dti ${OneDTI} )
+ #     set( ImageMathCmd ${ImageMath} ${dti} -type float -changeSp 1,1,1 -outfile ${dtichSp} )
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${dti})
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outputfile ${dtichSp})
+      SetAppOption(imageMath.changeSp 1)
+      SetAppOption(imageMath.changeSp.changeSp '1,1,1')
+      SetAppOption(imageMath.type 1)
+      SetAppOption(imageMath.type.giveType 'float')
+      echo( ${imageMath} )
+
+      If( ${step} < 17 )
+        run( output ${imageMath} )
+        echo( ${output} )
+      EndIf( ${step} < 17 )
+
+      #Center DTI Image
+      set( centereddtiImage ${atlasProcessDir}/${i}${DTI_TAG}_chSp_centered.nrrd )
+     # set( ImageMathCmd2 ${ImageMath} ${dtichSp} -center -outfile ${centereddtiImage} -type float)
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${dtichSp})
+      SetAppOption(imageMath.center 1)
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outputfile ${centereddtiImage})
+      SetAppOption(imageMath.type 1)
+      SetAppOption(imageMath.type.giveType 'float')
+      echo( ${imageMath} )
+
+      If( ${step} < 18 )
+        run( output ${imageMath} )
+        echo( ${output} )
+      EndIf( ${step} < 18 )
+
+      set( resampledDTIFile ${atlasProcessDir}/${i}${DTI_TAG}_chSp_centered_transformed.nrrd )
+      set( resampledDTIFileMasked ${atlasProcessDir}/${i}${DTI_TAG}_chSp_centered_transformed_masked.nrrd )
+    Else( RESCALE_CENTER_VERSION == OLD )
+      set( dtichSp ${atlasProcessDir}/${i}${DTI_TAG}_iso.nrrd)
+      set( centereddtiImage ${atlasProcessDir}/${i}${DTI_TAG}_iso_chSp.nrrd )
+#      Set( Cmd ${ResampleDTIlogEuclidean} -R ${InSubjDir}/${IMAGE_GRID} ${atlasProcessDir}/${i}${DTI_SUFFIX} ${dtichSp} )
+   
+  
+ echo()
+ echo('Resample dti command 1')
+ echo()
+
+      SetApp(resampleDTIlogEuclidean1 @ResampleDTIlogEuclidean)
+      SetAppOption(resampleDTIlogEuclidean1.reference 1)
+      SetAppOption(resampleDTIlogEuclidean1.reference.reference ${imagegridfile})
+      SetAppOption(resampleDTIlogEuclidean1.input ${atlasProcessDir}/${i}${DTI_SUFFIX})
+      SetAppOption(resampleDTIlogEuclidean1.output ${dtichSp})
+      echo( ${resampleDTIlogEuclidean1} )
+
+      If( ${step} < 19 )
+        Run( output ${resampleDTIlogEuclidean1} )
+        echo( ${output} )
+      EndIf( ${step} < 19 )
+
+#      Set( Cmd ${ImageMath} ${dtichSp} -changeSp 1,1,1 -outfile ${centereddtiImage} )
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${dtichSp})
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outputfile ${centereddtiImage})
+      SetAppOption(imageMath.changeSp 1)
+      SetAppOption(imageMath.changeSp.changeSp '1,1,1')
+      echo( ${imageMath} )
+
+      If( ${step} < 20 )
+        Run( output ${imageMath} )
+        echo( ${output} )
+      EndIf( ${step} < 20 )
+
+      set( resampledDTIFile ${atlasProcessDir}/${i}${DTI_TAG}_iso_chSp_transformed.nrrd )
+      set( resampledDTIFileMasked ${atlasProcessDir}/${i}${DTI_TAG}_iso_chSp_transformed_masked.nrrd )
+    EndIf( ${RESCALE_CENTER_VERSION} == OLD )
+  else( ${IS_SCALED} == TRUE )
+    set( resampledDTIFile ${atlasProcessDir}/${i}${DTI_TAG}_transformed.nrrd )
+    GetParam( centereddtiImage ${casesDTIs} ${iteration5} )
+    set( resampledDTIFileMasked ${atlasProcessDir}/${i}${DTI_TAG}_transformed_masked.nrrd )
+  endif( ${IS_SCALED} == TRUE )
+
+
+  #transform DTI
+
+
+
+      SetApp(resampleDTIlogEuclidean @ResampleDTIlogEuclidean)
+      SetAppOption(resampleDTIlogEuclidean.input ${centereddtiImage})
+      SetAppOption(resampleDTIlogEuclidean.output ${resampledDTIFile})
+   echo(${resampleDTIlogEuclidean})
+  GetParam(OneTransform ${casesTransforms} ${iteration5})
+  if( ${OneTransform} != '' )
+     SetAppOption(resampleDTIlogEuclidean.transformationFile 1)
+     SetAppOption(resampleDTIlogEuclidean.transformationFile.transformationFile ${OneTransform})
+  else( ${OneTransform} != '' )
+  Endif( ${OneTransform} != '' )
+  Set(PROCESS_SUBDIR Average)
+  Set( hfield ${OutSubjDir}/${i}_hFieldToAtlas.mha )
+
+echo(############################################################)
+echo()
+echo('hfield = ' ${hfield})
+echo()
+echo(############################################################)
+
+ # set( ResampleDTICmd ${ResampleDTIlogEuclidean} ${centereddtiImage} ${resampledDTIFile} ${combinedTransforms} -R ${FIXED_IMG} -H ${hfield} --transform_order input-to-output )
+
+      SetAppOption(resampleDTIlogEuclidean.reference 1)
+      SetAppOption(resampleDTIlogEuclidean.reference.reference ${FIXED_IMG})
+      SetAppOption(resampleDTIlogEuclidean.defField 1)
+      SetAppOption(resampleDTIlogEuclidean.defField.defField ${hfield})
+      SetAppOption(resampleDTIlogEuclidean.transform_order 1)
+      SetAppOption(resampleDTIlogEuclidean.transform_order.transform_order 'input-to-output')
+      echo( ${resampleDTIlogEuclidean} )
+echo()
+echo('resample dti command 2')
+echo()
+  If( ${step} < 21 )
+    run( output ${resampleDTIlogEuclidean} )
+    echo( ${output} )
+  EndIf( ${step} < 21 )
+
+##############################################################################
+  ####transform mask###################
+##############################################################################
+#  set( mask ${InSubjDir}/${i}${NEW_MASK_TAG} )
+  GetParam (mask ${casesMasks} {iteration5})
+  set( maskTransformed ${atlasProcessDir}/${i}_mask_transformed.nrrd )
+
+#  set( ResampleCmd ${ResampleVolume2} ${mask} ${maskTransformed} -H ${hfield} -R ${FIXED_IMG} -i nn )
+    SetApp(rv2 @ResampleVolume2)
+    SetAppOption(rv2.inputVolume ${mask})
+    SetAppOption(rv2.outputVolume ${maskTransformed})
+    SetAppOption(rv2.deffield 1)
+    SetAppOption(rv2.deffield.deffield ${hfield})
+    SetAppOption(rv2.referenceVolume 1)
+    SetAppOption(rv2.referenceVolume.referenceVolume ${FIXED_IMG})
+    SetAppOption(rv2.interpolationType 1)
+    SetAppOption(rv2.interpolationType.interpolationType 'nn')
+    echo( ${rv2} )
+
+  If( ${step} < 22 )
+    run( output ${rv2} )
+    echo( ${output} )
+  EndIf( ${step} < 22 )
+  ####mask DTI##########################
+#  set( maskCmd ${ImageMath} ${resampledDTIFile} -mask ${maskTransformed} -outfile ${resampledDTIFileMasked} -type float)
+      SetApp(imageMath @ImageMath)
+      SetAppOption(imageMath.infile ${resampledDTIFile})
+      SetAppOption(imageMath.mask 1)
+      SetAppOption(imageMath.mask.mask ${maskTransformed})
+      SetAppOption(imageMath.outfile 1)
+      SetAppOption(imageMath.outfile.outputfile ${resampledDTIFileMasked})
+      SetAppOption(imageMath.type 1)
+      SetAppOption(imageMath.type.giveType 'float')
+
+  echo( ${imageMath} )
+  If( ${step} < 23 )
+    run( output ${imageMath} )
+    echo( ${output} )
+  EndIf( ${step} < 23 )
+ 
+  if (${iteration5} == 0)
+    set( TRANSFORMED_DTI_SS  '--inputs' ${resampledDTIFileMasked})
+    set( TRANSFORMED_DTI_NSS  '--inputs' ${resampledDTIFile})
+  else (${iteration5} == 0)
+    Set(save_tmp ${TRANSFORMED_DTI_SS})
+    Set(save_tmpN ${TRANSFORMED_DTI_NSS})
+    set( TRANSFORMED_DTI_SS ${save_tmp} '--inputs' ${resampledDTIFileMasked})
+    set( TRANSFORMED_DTI_NSS ${save_tmpN} '--inputs' ${resampledDTIFile})
+  endif (${iteration5} == 0)
+
+echo(##########################################################)
+echo()
+echo('transformed dti ss = ' ${TRANSFORMED_DTI_SS})
+echo()
+echo(##########################################################)
+#  set( TRANSFORMED_DTI_SS ${TRANSFORMED_DTI_SS} '--inputs' ${resampledDTIFileMasked} )
+#  set( TRANSFORMED_DTI_NSS ${TRANSFORMED_DTI_NSS} '--inputs' ${resampledDTIFile} )
+  echo('iteration 5 =  ' ${iteration5})
+  Inc(${iteration5} 1)
+  echo('i5 = ' ${iteration5})
+endforeach( ${CASES} )
+#############Prepare for skull-stripped (SS) and non-skull-stripped (NSS)################
+set( AverageName AverageTensor_SS AverageTensor )
+
+
+################################################################################
+#########################Average DTI############################################
+################################################################################
+
+Set( count 0 )
+#### FRANCOIS : foreach sur AverageName ou sur list????
+
+foreach( i ${AverageName} )
+  if( ${count} == 0 )
+    Set( List ${TRANSFORMED_DTI_SS} )
+  else( ${count} == 0 )
+    Set( List ${TRANSFORMED_DTI_NSS} )
+  endif( ${count} == 0 )
+  set( averageTensorName ${atlasProcessDir}/${i}.nrrd )
+#  set( dtiaverageCmd ${dtiaverage} ${List} --tensor_output ${averageTensorName} -m pga )
+      SetApp(dtiaverageCmd @dtiaverage)
+      SetAppOption(dtiaverageCmd.list ${List})
+      SetAppOption(dtiaverageCmd.tensorOutput 1)
+      SetAppOption(dtiaverageCmd.tensorOutput.tensorName ${averageTensorName})
+      SetAppOption(dtiaverageCmd.method 1)
+      SetAppOption(dtiaverageCmd.method.method 'pga')
+  echo( ${dtiaverageCmd} )
+
+  If( ${step} < 24 )
+    run( output ${dtiaverageCmd} )
+    echo( ${output} )
+  EndIf( ${step} < 24 )
+
+  ######Convert average DTI to float###################################
+  set( averageTensorFloat ${outputDir}/${i}.nrrd )
+#  set( unuCmd ${unu} convert -t float -i ${averageTensorName} -o ${averageTensorFloat} )
+      SetApp(unuCmd @unu)
+      SetAppOption(unuCmd.convert 1)
+      SetAppOption(unuCmd.type 1})
+      SetAppOption(unuCmd.type.unuType 'float')
+      SetAppOption(unuCmd.input 1)
+      SetAppOption(unuCmd.input.inputFile ${averageTensorName})
+      SetAppOption(unuCmd.output 1)
+      SetAppOption(unuCmd.output.outputFile ${averageTensorFloat})
+
+  echo( ${unuCmd} )
+  If( ${step} < 25 )
+    run( output ${unuCmd} )
+    echo( ${output} )
+  EndIf( ${step} < 25 )
+
+  #########################Compute MD, FA, Color FA, RD and AD from Average#########################
+  set( FAFile ${outputDir}/${i}_FA.nrrd )
+  set( ColorFAFile ${outputDir}/${i}_ColorFA.nrrd )
+  set( MDFile ${outputDir}/${i}_MD.nrrd )
+  Set( ADFile ${outputDir}/${i}_AD.nrrd )
+  Set( RDFile ${outputDir}/${i}_RD.nrrd )
+#  set(MDCmd ${dtiprocess} --dti_image ${averageTensorName} -m ${MDFile} --scalar-float )
+      SetApp(dtiprocessCmd @dtiprocess)
+      SetAppOption(dtiprocessCmd.dti_image 1)
+      SetAppOption(dtiprocessCmd.dti_image.dti_imageFile ${averageTensorName})
+      SetAppOption(dtiprocessCmd.matrix 1)
+      SetAppOption(dtiprocessCmd.matrix.matrixFile ${MDFile})
+      SetAppOption(dtiprocessCmd.scalarFloat 1)
+  echo( ${dtiprocessCmd} )
+
+  If( ${step} < 26 )
+    CondorPostScript(dtiprocessCmd ${cfg_exe} ${cfg_condorpostscript} ${cfg_output_directory} ${MDFile} ${sibling_outputFolderId})
+    run( output ${dtiprocessCmd} )
+    echo( ${output} )
+  EndIf( ${step} < 26 )
+
+#  set(FACmd ${dtiprocess} --dti_image ${averageTensorName} -f ${FAFile} --scalar-float )
+      SetApp(FACmd @dtiprocess)
+      SetAppOption(FACmd.dti_image 1)
+      SetAppOption(FACmd.dti_image.dti_imageFile ${averageTensorName})
+      SetAppOption(FACmd.transform 1)
+      SetAppOption(FACmd.transform.transformFile ${FAFile})
+      SetAppOption(FACmd.scalarFloat 1)
+  echo( ${FACmd} )
+
+  If( ${step} < 27 )
+    CondorPostScript(FACmd ${cfg_exe} ${cfg_condorpostscript} ${cfg_output_directory} ${FAFile} ${sibling_outputFolderId})
+    run( output ${FACmd} )
+    echo( ${output} )
+  EndIf( ${step} < 27 )
+
+#  set(ColorFACmd ${dtiprocess} --dti_image ${averageTensorName} --color_fa_output ${ColorFAFile} --scalar-float )
+      SetApp(ColorFACmd @dtiprocess)
+      SetAppOption(ColorFACmd.dti_image 1)
+      SetAppOption(ColorFACmd.dti_image.dti_imageFile ${averageTensorName})
+      SetAppOption(ColorFACmd.color_fa_output 1)
+      SetAppOption(ColorFACmd.color_fa_output.color_fa_outputFile ${ColorFAFile})
+      SetAppOption(ColorFACmd.scalarFloat 1)
+  echo( ${ColorFACmd} )
+
+  If( ${step} < 28 )
+    CondorPostScript(ColorFACmd ${cfg_exe} ${cfg_condorpostscript} ${cfg_output_directory} ${ColorFAFile} ${sibling_outputFolderId})
+    run( output ${ColorFACmd} )
+    echo( ${output} )
+  EndIf( ${step} < 28 )
+
+#  Set ( COMPUTEADCmd ${dtiprocess} --dti_image ${averageTensorName} --lambda1_output ${ADFile} --scalar-float )
+      SetApp(COMPUTEADCmd @dtiprocess)
+      SetAppOption(COMPUTEADCmd.dti_image 1)
+      SetAppOption(COMPUTEADCmd.dti_image.dti_imageFile ${averageTensorName})
+      SetAppOption(COMPUTEADCmd.lambda1_output 1)
+      SetAppOption(COMPUTEADCmd.lambda1_output.lambda1_outputFile ${ADFile})
+      SetAppOption(COMPUTEADCmd.scalarFloat 1)
+  echo( ${COMPUTEADCmd} )
+  If( ${step} < 29 )
+    CondorPostScript(COMPUTEADCmd ${cfg_exe} ${cfg_condorpostscript} ${cfg_output_directory} ${ADFile} ${sibling_outputFolderId})
+    Run (output ${COMPUTEADCmd})
+    echo( ${output} )
+  EndIf( ${step} < 29 )
+
+  Set( LAMBDA2 ${atlasProcessDir}/${i}_RD1.nrrd )
+  Set( LAMBDA3 ${atlasProcessDir}/${i}_RD2.nrrd )
+#  Set( COMPUTERDCmd ${dtiprocess} --dti_image ${averageTensorName} --lambda2_output ${LAMBDA2} --lambda3_output ${LAMBDA3} --scalar-float )
+      SetApp(COMPUTERDCmd @dtiprocess)
+      SetAppOption(COMPUTERDCmd.dti_image 1)
+      SetAppOption(COMPUTERDCmd.dti_image.dti_imageFile ${averageTensorName})
+      SetAppOption(COMPUTERDCmd.lambda2_output 1)
+      SetAppOption(COMPUTERDCmd.lambda2_output.lambda2_outputFile ${LAMBDA2})
+      SetAppOption(COMPUTERDCmd.lambda3_output 1)
+      SetAppOption(COMPUTERDCmd.lambda3_output.lambda3_outputFile ${LAMBDA3})
+      SetAppOption(COMPUTERDCmd.scalarFloat 1)
+  echo( ${COMPUTERDCmd} )
+
+  If( ${step} < 30 )
+    Run (output ${COMPUTERDCmd})
+    echo( ${output} )
+  EndIf( ${step} < 30 )
+
+#  Set ( COMPUTERDCmd ${ImageMath} ${LAMBDA2} -avg ${LAMBDA3} -type float -outfile ${RDFile} )
+      SetApp(COMPUTERDCmd @ImageMath)
+      SetAppOption(COMPUTERDCmd.infile ${LAMBDA2})
+      SetAppOption(COMPUTERDCmd.avg 1)
+      SetAppOption(COMPUTERDCmd.avg.avg ${LAMBDA3})
+      SetAppOption(COMPUTERDCmd.type 1)
+      SetAppOption(COMPUTERDCmd.type.giveType 'float')
+      SetAppOption(COMPUTERDCmd.outfile 1)
+      SetAppOption(COMPUTERDCmd.outfile.outputfile ${RDFile})
+  echo( ${COMPUTERDCmd} )
+
+  If( ${step} < 31 )
+    CondorPostScript(COMPUTERDCmd ${cfg_exe} ${cfg_condorpostscript} ${cfg_output_directory} ${RDFile} ${sibling_outputFolderId})
+    Run (output ${COMPUTERDCmd})
+    echo( ${output} )
+  EndIf( ${step} < 31 )
+  Inc(${count} 1)
+  Int( ${count} )
+endforeach( i ${AverageName} )
+#We set the skull stripped MD image as the "normal" MD image
+set( MDFile ${outputDir}/AverageTensor_SS_MD.nrrd )

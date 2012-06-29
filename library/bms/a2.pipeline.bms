@@ -1,0 +1,19 @@
+echo()
+echo('a2')
+echo()
+#Variables initialization
+#RegEx( DTI_TAG ${DTI_SUFFIX} '\..*' REPLACE '' )
+GetParam(OneDTI ${casesDTIs} 1)
+GetParam(OneCase ${cases} 1)
+RegEx ( WithoutPath ${OneDTI} '/.+/' REPLACE '' )
+RegEx ( DTI_SUFFIX ${WithoutPath} ${OneCase} REPLACE '' )
+RegEx( DTI_TAG ${DTI_SUFFIX} '\..*' REPLACE '' )
+
+#RegEx( ATLAS_INPUT_TAG ${ATLAS_INPUT_SUFFIX} '\..*' REPLACE '' )
+GetParam(OneCaseInput ${casesInputs} 1)
+RegEx ( WithoutPath ${OneCaseInput} '/.+/' REPLACE '' )
+RegEx ( ATLAS_INPUT_SUFFIX ${WithoutPath} ${OneCase} REPLACE '' )
+RegEx( ATLAS_INPUT_TAG ${ATLAS_INPUT_SUFFIX} '\..*' REPLACE '' )
+
+
+set( ATLAS_INPUT_MASKED_TAG ${ATLAS_INPUT_TAG}_masked_from_seg )
