@@ -18,24 +18,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 =========================================================================*/
 require_once BASE_PATH . '/modules/rodent/controllers/PipelineController.php';
-/** w controller uses a condor postscript because it's really close and that marion is rushing ;)*/
+
 class Rodent_WController extends Rodent_PipelineController
 {
 
   function getPipelinePrefix() { return "rodent_warping_"; }
   function getUiTitle() { return "Warping Pipeline Wizard"; }
   function getCasesSelection() { return array('id'=> "casesdirectory", 'label' => "Select the Cases Directory"); }
-//  function getMultiItemSelections() { return array("templatefiles" => "Template Files"); }
-// want all this next stuff to have a default
   
-  function getMultiItemSelections() { return array("labelmapsfiles" => "Label Map Files"); }
-                                 
+  function getMultiItemSelections() { return array("labelmapsfiles" => array('label' => 'Label Map Files')); }
+                               
   function getSingleItemSelections() { return 
-      array("templatefile" => array("label" => "Template file", "bitstreamCount" => "single")
+      array("templatefile" => array("label" => "Template file", "bitstreamCount" => "single"),
             "templatemaskfile" => array("label" => "Template Mask file", "bitstreamCount" => "single")); }
   function getParameters()
     {
-    //TODO want to add in default value for parameters
     return array("usinghfield" => array("type" => "boolean", "label" => "Using inverse H-Field?", "default" => true));
     }
   function getSingleBitstreamItemParams() { return array("templatefile" => "Template file", "templatemaskfile" => "Template Mask file"); }
@@ -50,4 +47,4 @@ class Rodent_WController extends Rodent_PipelineController
   function getOutputFolderStem() { return array(
       array("output_folder_type" => "cases_child", "name" => "6-Warping")); }
   
-}//end class  NOTE : it's going to look for the files in the 2-Reg dir in MIDAS, this needs to be changed in the future
+}//end class
