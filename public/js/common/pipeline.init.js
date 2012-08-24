@@ -121,8 +121,19 @@ midas.rodent.pipeline.selectionCallbacks = {};
 midas.rodent.pipeline.validateSteps = function(stepnumber)
   {
   var isStepValid = true;
-  // validate step 1
-  //HACK for now, no validation
+  $('#wizard').smartWizard('setError',{stepnum:1,iserror:false});
+  // validate step 1 if a cases step exists, be sure that
+  // at least one case is selected
+  if(stepnumber == 1 && json.inputs.cases) {
+      var folder_class = json.inputs.prefix + "casefolder";
+      var checked = $('.'+folder_class+':checked')
+      if(!checked || checked.length == 0) {
+          $('#wizard').smartWizard('setError',{stepnum:1,iserror:true});
+          $('#wizard').smartWizard('showMessage','Select at least one case and then click Next.');
+          return false;    
+      }
+  }
+  // 
   // TODO how to validate here with different pipelines?
   return true;
   }
@@ -211,47 +222,3 @@ folderSelectionCallback = function(folder_name, folder_id)
   callBack(folder_id);
   return;
   }
-
-
-  
-  
-
-    // create a callback to run after selecting the cases folder
-    /*var casesCallback = function(folder_id) {
-        // get the list of cases from the server
-        // setup checkboxes to allow the user to select a subset of cases
-        ajaxWebApi.ajax({
-            method: 'midas.folder.children',
-            args: 'id=' + folder_id,
-            success: function(results) {
-                // find all the folder children of the selected folder
-                // add a checkbox for each of them so the user can select cases
-                // TODO remove the checkboxes_div or else disable browse folders button 
-                // because if you keep selecting a folder the checkboxes keep getting added
-                var checkbox_div = $('#step-1').append('<div id="case_folders_checkboxes_div"></div>');
-                checkbox_div.append("Select the cases to run:");
-                var rows = "<ul>";
-                $.each(results.data.folders, function(ind, folder) {
-                    var row_li = '<li><span><input type="checkbox" class="'+prefix+'casefolder" id="'+prefix+"casefolder_"+folder.folder_id+'" />'+folder.name+'</span></li>';                    
-                    rows = rows + row_li;
-                });
-                rows = rows + "</ul>";
-                checkbox_div.append(rows);
-                
-                // now get the list of suffixes for this pipeline
-                // add them as options of a drop down
-                ajaxWebApi.ajax({
-                    method: 'midas.rodent.list.case.suffixes',
-                    args: 'folder_id=' + folder_id + "&selected_subfolder_name=2-Registration",
-                    success: function(results) {
-                        var suffixSelectId = prefix + "suffix";
-                        var suffixSelect = 'Suffix:<select id="'+suffixSelectId+'"></input>';
-                        checkbox_div.append(suffixSelect);
-                        $.each(results.data.suffixes, function(index, suffix) {
-                            $("#"+suffixSelectId).append('<option value='+suffix+'>'+suffix+'</option>');
-                        });
-                    }
-                });
-            }
-        });
-    };*/
