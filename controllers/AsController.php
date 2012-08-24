@@ -47,9 +47,8 @@ class Rodent_AsController extends Rodent_AppController
         "segmentation" => "Segmentation",
         "imagegrid" => "Image Grid");
     
-    $parameters = array("diffeomorphic" => array("type" => "boolean", "label" => "Use diffeomorphic transformation?"),
-        "smooth" => array("type" => "boolean", "label" => "Use smooth option?"),
-        "scaled" => array("type" => "boolean", "label" => "Scaled image?"));
+    $parameters = array("diffeomorphic" => array("type" => "boolean", "label" => "Checked for diffeomorphic, Unchecked for elastic transformation?"),
+        "smooth" => array("type" => "boolean", "label" => "Use smooth option?"));
     
     $inputs = array("prefix" => $this->pipelinePrefix, "folders" => $folderSelections, "items" => $itemSelections, "parameters" => $parameters);
     $this->view->inputs = $inputs;

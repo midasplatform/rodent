@@ -30,7 +30,21 @@ class Rodent_Notification extends ApiEnabled_Notification
   public function init()
     {
     $this->enableWebAPI($this->moduleName);
+    $this->addCallBack('CALLBACK_CORE_GET_LEFT_LINKS', 'getLeftLink');
     }//end init
+
+  /**
+   *@method getLeftLink
+   * will generate a link for this module to be displayed in the main view.
+   *@return ['rodent imaging' => [ link to rodent module, module icon image path]]
+   */
+  public function getLeftLink()
+    {
+    $fc = Zend_Controller_Front::getInstance();
+    $baseURL = $fc->getBaseUrl();
+    $moduleWebroot = $baseURL . '/rodent';
+    return array('Rodent Imaging' => array($moduleWebroot . '/index',  $baseURL . '/modules/rodent/public/images/rat.png'));
+    }
 
 
   } //end class

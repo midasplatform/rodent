@@ -25,17 +25,19 @@ class Rodent_RController extends Rodent_PipelineController
   function getPipelinePrefix() { return "rodent_registration_"; }
   function getUiTitle() { return "Registration Pipeline Wizard"; }
   function getCasesSelection() { return array('id'=> "casesdirectory", 'label' => "Select the Cases Directory"); }
-//  function getMultiItemSelections() { return array("templatefiles" => "Template Files"); }
-// want all this next stuff to have a default
-  
+
   function getMultiItemSelections() { return array(); }
                                  
   function getSingleItemSelections() { return 
-      array("segmentationfile" => array("label" => "Segmentation file", "bitstreamCount" => "single"),
-            "templatefile" => array("label" => "Template file", "bitstreamCount" => "single")); }
+      array("templatefile" => array("label" => "Template file", "bitstreamCount" => "single")); }
   function getParameters()
     {
     //TODO want to add in default value for parameters
+    
+    // TODO if time permits, add in a dropdown combo box for inputType 
+    // TODO if even more time permits, verify orientation to be some ordered combination
+    // of 1 per group of (L/R) (P/A) (S/I), this is low priority
+      
     return array("bias" => array("type" => "boolean", "label" => "Correct bias?", "default" => true),
         "skullstrip" => array("type" => "boolean", "label" => "Use skullstrip function?", "default" => true),
         "scaled" => array("type" => "boolean", "label" => "Are the inputs scaled at 1,1,1?"),
@@ -46,6 +48,9 @@ class Rodent_RController extends Rodent_PipelineController
   function getPostscriptPath() { return BASE_PATH . '/modules/rodent/library/py/a_condor_postscript.py'; }
   function getConfigScriptStem() { return "r"; }
   function getBmScript() { return "r1.pipeline.bms"; }
+  
+  
+  // TODO make additionalimages and additionalimagesnn, transform and initialtransform optional once we can make them optional
   function getInputFolder() { return array(
       "2-Registration" => array(
           array("label"=> "inputs", "varname" => "casesInputs"),
@@ -54,7 +59,6 @@ class Rodent_RController extends Rodent_PipelineController
           array("label"=> "transform", "varname" => "casesTransforms"),
           array("label"=> "initialtransform", "varname" => "casesInitialTransforms"))); }
   function getOutputFolderStem() { return array(
-      array("output_folder_type" => "cases_sibling", "name" => "Registration", "redirect" => true),
       array("output_folder_type" => "cases_child", "name" => "2-Registration")); }
   
 }//end class  NOTE : it's going to look for the files in the 2-Reg dir in MIDAS, this needs to be changed in the future
