@@ -85,7 +85,7 @@ class Rodent_ApiComponent extends AppComponent
             // so these items are like $case . $suffix
             // add $suffix to the list of $suffixes
             $suffix = substr($subfolderItemName, $caseZeroNameLength);
-            $suffixes[] = $suffix;
+            $suffixes[] = array('value' => $suffix, 'label' => $suffix);
             }
           }
         }  

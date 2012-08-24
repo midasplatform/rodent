@@ -37,13 +37,19 @@ midas.rodent.util.createCasesCallback = function(prefix, stepNumber, subFolders,
                         var suffixSelectRow = '<tr><td>'+variable.label + '</td><td><select class="'+suffixSelectClass+'" id="'+suffixSelectId+'"></td></tr>';
                         $('#'+suffixes_ul_id).append(suffixSelectRow);
                         
-                        console.log(variable);
+                        
                         ajaxWebApi.ajax({
                             method: 'midas.rodent.list.case.suffixes',
                             args: 'folder_id=' + folder_id + "&selected_subfolder_name="+subFolder,
                             success: function(results) {
+                                if(variable.optional) {
+                                    // add in a blank suffix to exclude this variable
+                                    var suffixOption = '<option value="">None</option>';     
+                                    $('#'+suffixSelectId).append(suffixOption);
+                                }
+                                    
                                 $.each(results.data.suffixes, function(index, suffix) {
-                                    var suffixOption = '<option value='+suffix+'>'+suffix+'</option>'; 
+                                    var suffixOption = '<option value='+suffix.value+'>'+suffix.label+'</option>'; 
                                     $('#'+suffixSelectId).append(suffixOption);
                                 });
                             } //success
