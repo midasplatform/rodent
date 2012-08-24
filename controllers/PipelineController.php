@@ -24,54 +24,50 @@ abstract class Rodent_PipelineController extends Rodent_AppController
   public $_models = array('Item', 'Bitstream', 'ItemRevision', 'Assetstore', 'Folder', 'Community');
   public $_components = array('Export');
 
-  // PIPELINE
-
+  // a unique string for the pipeline, something like rodent_pipelinename_
   abstract function getPipelinePrefix();
+  // title to display on UI wizard
   abstract function getUiTitle();
+  
+  // return an array if you want the user to be able to select cases for this pipeline
+  // id will be a batchmake config variable, i.e. for the ss pipeline, would go in
+  // ss.config.bms, and would create to a line in that file like:
+  // Set(casesdirectory '455')
+  // where 455 is the midas ID for the folder chosen where all of the case folders
+  // are nested under
   abstract function getCasesSelection();
+  
+  abstract function getInputFolder();
+  
   abstract function getMultiItemSelections();
+  // this method will create a UI step that allows the user to select a single
+  // individual midas item for each row, where the array key will be the batchmake config variable
+  // return an empty array to have this step skipped in the UI
   abstract function getSingleItemSelections();
+  
+  // subclasses can override this method to have a different label for this step
+  function getSingleItemDisplayLabel() { return "Select Items"; }
+  
   abstract function getParameters();
+  // subclasses can override this method to change the display label on the step
+  function getParametersDisplayLabel() { return "Select Parameters"; }
+  
+  // should be an array with keys being any variables defined in the getSingleItemSelections
+  // method that only have one bitstream (file), needed to know how to export out of Midas
+  // onto the filesystem
   abstract function getSingleBitstreamItemParams();
   abstract function getPostscriptPath();
   abstract function getConfigScriptStem();
   abstract function getBmScript();
-  abstract function getInputFolder();
   abstract function getOutputFolderStem();
 
-  /*
-  protected $pipelinePrefix = "rodent_skullstrip_";
-  protected $uiTitle = "Skull Strip Pipeline Wizard";
-  protected $casesSelection = array('id'=> "casesdirectory", 'label' => "Select the Cases Directory");
-  protected $multiItemSelections = array("rregfiles" => "Rreg files", "templatefiles" => "Template files");
-  protected $singleItemSelections = array("templategridfile" => array("label" => "Template grid file", "bitstreamCount" => "single"));
-//TODO want to add in default value for parameters
-  protected $parameters = array("newmasktag" => array("type" => "text", "label" => "Tag of the mask that is gonna be created"),
-	"rigid" => array("type" => "boolean", "label" => "Using rigid transformation? (usually checked)"),
-        "registration" => array("type" => "boolean", "label" => "Do registration? (usually checked)"),
-        "biasfieldcorrection" => array("type" => "boolean", "label" => "Use bias field correction?"),
-        "rigidisFA" => array("type" => "boolean", "label" => "rigidisFA"),
-        "scalar" => array("type" => "boolean", "label" => "Is the input scalar?"),
-        "scaled" => array("type" => "boolean", "label" => "Is the input scaled?"),
-        "filtercurvature" => array("type" => "boolean", "label" => "filtercurvature? (usually checked)"),
-        "segimagestype" => array("type" => "text", "label" => "Suffix of the images used for segmentation (usually the same suffix given on folder window)"),
-        "radius" => array("type" => "integer", "label" => "radius (usually 5)"),
-        "abcpriors" => array("type" => "text", "label" => "abcpriors (usually 1 1 1 1)"),
-        "rigidisMD" => array("type" => "boolean", "label" => "rigidisMD"),
-        "sequence" => array("type"=>"text", "label"=>"sequence 0 NB_LOOPS 1 (usually 0 0 1)"));
-  protected $singleBitstreamItemParams = array("templategridfile" => "Template grid file");
-    $condorPostScriptPath = BASE_PATH . '/modules/rodent/library/ss_condor_postscript.py';
-    $configScriptStem = "ss";
-    $bmScript = "ss1.pipeline.bms";
-  inputFolder = "2-Registration"
-  outputFolder = "3-SkullStripping"
-    */
+
     
   /** init a job*/
   
-// TODO this init action could be put at the superclass  
   function initAction()
     {
+
     $this->view->header = $this->getUiTitle();
     if(!$this->logged)
       {
@@ -82,9 +78,6 @@ abstract class Rodent_PipelineController extends Rodent_AppController
     
     $inputs = array("prefix" => $this->getPipelinePrefix());
     $inputs["cases"] = $this->getCasesSelection();
-    
-    //$inputs["casesFolderName"] = $this->getInputFolder();
-    
     $inputs["casesFolderNames"] = array_keys($this->getInputFolder());
     $inputs["caseFolderVariables"] = $this->getInputFolder();
     
@@ -134,21 +127,17 @@ abstract class Rodent_PipelineController extends Rodent_AppController
             // need to get all children items of that folder to populate
             //$defaultItemIds = $properties['default_items'];
             
-/*            
-    array("templatefiles" => 
-              array("label" =>"Template Files",
-                    "default" =>
-                        array("folder" => "569",
-                              "items" =>
-                                 array("1391", "1392")))); }            */
+
             $processSteps[$processStepInd++] = $currentMultiItem;
         }
     }
-    if(array_key_exists("singleItems", $inputs)) {
-        $processSteps[$processStepInd++] = array('title'=>'Select Items', 'type' => 'singleItems');
+    if(array_key_exists("singleItems", $inputs) && !empty($inputs["singleItems"])) {
+        $singleItemStepLabel = $this->getSingleItemDisplayLabel();
+        $processSteps[$processStepInd++] = array('title'=>$singleItemStepLabel, 'type' => 'singleItems');
     }
     if(array_key_exists("parameters", $inputs)) {
-        $processSteps[$processStepInd++] = array('title'=>'Select Parameters', 'type' => 'parameters');
+        $parameterStepLabel = $this->getParametersDisplayLabel();
+        $processSteps[$processStepInd++] = array('title'=> $parameterStepLabel, 'type' => 'parameters');
     }
     
     $this->view->processSteps = $processSteps;
@@ -159,10 +148,8 @@ abstract class Rodent_PipelineController extends Rodent_AppController
     }
 
 
-// TODO something with output directory    
-// at the end of the run, go to the cases directory, display that folder
   /**
-   * start an SS job, via an ajax call.
+   * start a job, via an ajax call.
    */
   public function startjobAction()
     {
@@ -233,12 +220,12 @@ abstract class Rodent_PipelineController extends Rodent_AppController
         else
           {
           // upper case boolean values for BatchMake
-          // TODO should have a better handler for this
-          if($value === 'true')
+          $lowerValue = strtolower($value);
+          if($lowerValue === 'true')
             {
             $value = "TRUE";
             }
-          if($value === 'false')
+          if($lowerValue === 'false')
             {
             $value = "FALSE";
             }
@@ -277,9 +264,11 @@ abstract class Rodent_PipelineController extends Rodent_AppController
     // specific export for the cases chosen, for each suffix property
     foreach($caseSuffixes as $varName => $suffix)
       {
-      $inputFolder = $varToFolder[$varName];  
-//      $executeComponent->exportCases($userDao, $taskDao, $configInputs, $caseFolders, $caseSuffix, $this->getInputFolder());  
-      $executeComponent->exportCases($userDao, $taskDao, $configInputs, $caseFolders, $varName, $suffix, $inputFolder);
+      if($suffix !== '')
+        {
+        $inputFolder = $varToFolder[$varName];  
+        $executeComponent->exportCases($userDao, $taskDao, $configInputs, $caseFolders, $varName, $suffix, $inputFolder);
+        }
       }
       
       
