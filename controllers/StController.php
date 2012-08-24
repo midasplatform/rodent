@@ -18,22 +18,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 =========================================================================*/
 require_once BASE_PATH . '/modules/rodent/controllers/PipelineController.php';
-/** stat controller uses a condor postscript because it's really close and that marion is rushing ;)*/
-class Rodent_StatsController extends Rodent_PipelineController
+
+class Rodent_StController extends Rodent_PipelineController
 {
 
   function getPipelinePrefix() { return "rodent_stats_"; }
   function getUiTitle() { return "Stats Pipeline Wizard"; }
   function getCasesSelection() { return array('id'=> "casesdirectory", 'label' => "Select the Cases Directory"); }
-//  function getMultiItemSelections() { return array("templatefiles" => "Template Files"); }
-// want all this next stuff to have a default
   
   function getMultiItemSelections() { return array(); }
                                  
   function getSingleItemSelections() { return array(); }
   function getParameters()
     {
-    //TODO want to add in default value for parameters
     return array("labelssuffixes" => array("type" => "text", "label" => "Label map suffixes", "default" => true));
     }
   function getSingleBitstreamItemParams() { return array(); }
@@ -46,4 +43,4 @@ class Rodent_StatsController extends Rodent_PipelineController
   function getOutputFolderStem() { return array(
       array("output_folder_type" => "cases_child", "name" => "7-Stats")); }
   
-}//end class  NOTE : it's going to look for the files in the 2-Reg dir in MIDAS, this needs to be changed in the future
+}//end class
