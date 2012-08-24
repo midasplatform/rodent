@@ -3,8 +3,6 @@ echo('1')
 ############Include needed files#######################
 # properties from midas
 include( as.config.bms)
-#include( asconfig.bms)
-#include( globalconfig.bms)
 
 
 ##### from MIDAS to batchmake #####
