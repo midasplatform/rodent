@@ -25,15 +25,13 @@ class Rodent_AController extends Rodent_PipelineController
   function getPipelinePrefix() { return "rodent_atlas_"; }
   function getUiTitle() { return "Average Pipeline Wizard"; }
   function getCasesSelection() { return array('id'=> "casesdirectory", 'label' => "Select the Cases Directory"); }
-//  function getMultiItemSelections() { return array("templatefiles" => "Template Files"); }
-// want all this next stuff to have a default
-  
   function getMultiItemSelections() { return array(); }
                                  
   function getSingleItemSelections() { return 
-      array("populationaveragefile" => array("label" => "Population Average File", "bitstreamCount" => "single"),
-            "segmentationfile" => array("label" => "Segmentation file", "bitstreamCount" => "single"),
-            "imagegridfile" => array("label" => "Image grid file", "bitstreamCount" => "single")); }
+      array("imagegridfile" => array("label" => "Image grid file", "bitstreamCount" => "single")); }
+  // TODO move imagegridfile to cases (getInputFolder) once this getSingleItemSelections is allowed to be optional
+  // it will go under 2-Registration
+      
   function getParameters()
     {
     //TODO want to add in default value for parameters
@@ -41,12 +39,18 @@ class Rodent_AController extends Rodent_PipelineController
         "scalar" => array("type" => "boolean", "label" => "Is the input image a scalar image?"),
         "scaled" => array("type" => "boolean", "label" => "Are the inputs scaled at 1,1,1?"),
         "histogrammatch" => array("type" => "boolean", "label" => "Use histogram match?", "default" => true),
+        // TODO Francois will change the bms to hard code this, after he contacts me I'll remove radius
         "radius" => array("type" => "text", "label" => "radius", "default" => "1"));
     }
   function getSingleBitstreamItemParams() { return array("populationaveragefile" => "Population Average File", "segmentationfile" => "Segmentation file", "imagegridfile" => "Image grid file"); }
   function getPostscriptPath() { return BASE_PATH . '/modules/rodent/library/py/a_condor_postscript.py'; }
   function getConfigScriptStem() { return "a"; }
   function getBmScript() { return "a1.pipeline.bms"; }
+  
+  // TODO make optional: 
+  // TODO Francois will send an email describing originals and dti, there will probably have to be a special case UI component for these
+  // put the originals and dti stuff after setting the cases, try to put on the same page if possible b/c these relate to cases
+  
   function getInputFolder() { return array(
       "2-Registration" => array(
           array("label"=> "inputs", "varname" => "casesInputs"),
