@@ -29,7 +29,6 @@ $processSteps = $this->processSteps;
 <div id="wizard" class="swMain">
   <ul>
 <?php
-// this can be pulled out into a method
   foreach($processSteps as $i => $processStep)
     {
     echo '<li>';
@@ -50,7 +49,6 @@ $processSteps = $this->processSteps;
     
 <?php
 
-// this stuff can also be pulled out into a method
   foreach($processSteps as $i => $processStep)
     {
     echo '<div id="step-'.$i.'">';
@@ -68,7 +66,6 @@ $processSteps = $this->processSteps;
       echo 'Browse';
       echo "</a>";
       echo '</div>';  
-//      echo '<input type="hidden" id="'. $prefix . $id .'_type" value="cases"/>';
       echo '<input type="hidden" id="'. $prefix . $id .'" class="pipelineparameter" value=""/>';
       echo '</div><br/>';
       }
