@@ -10,7 +10,7 @@ $(document).ready(function(){
   $('#wizard').smartWizard(
   {
   // Properties
-    keyNavigation: true, // Enable/Disable key navigation(left and right keys are used if enabled)
+    keyNavigation: false, // Disable key navigation
     enableAllSteps: false,  // Enable/Disable all steps on first load
     transitionEffect: 'fade', // Effect on navigation, none/fade/slide/slideleft
     contentURL:null, // specifying content url enables ajax content loading
