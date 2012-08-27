@@ -61,7 +61,7 @@ abstract class Rodent_PipelineController extends Rodent_AppController
   abstract function getBmScript();
   abstract function getOutputFolderStem();
 
-
+  function getInputFolderConnectedDropdowns() { return array(); }
     
   /** init a job*/
   
@@ -80,6 +80,7 @@ abstract class Rodent_PipelineController extends Rodent_AppController
     $inputs["cases"] = $this->getCasesSelection();
     $inputs["casesFolderNames"] = array_keys($this->getInputFolder());
     $inputs["caseFolderVariables"] = $this->getInputFolder();
+    $inputs["caseFolderDropdownVariables"] = $this->getInputFolderConnectedDropdowns();
     
     $inputs["multiItems"] = $this->getMultiItemSelections();
     $inputs["singleItems"] = $this->getSingleItemSelections();
@@ -202,7 +203,6 @@ abstract class Rodent_PipelineController extends Rodent_AppController
           // add this to the set of suffixes
           $varName = substr($inputParam, $caseFolderSubstrInd+2);
           $caseSuffixes[$varName] = $value;
-          //$caseSuffix = $value;   
           }
         else if(strpos($inputParam, $multiitemPrefix) === 0)
           {
@@ -244,7 +244,7 @@ abstract class Rodent_PipelineController extends Rodent_AppController
         }
       }
 
-    // create a mapping of variable name to input folder
+    // create a mapping of variable name to input folder, for the suffix properties
     $inputFolders = $this->getInputFolder();
     $varToFolder = array();
     foreach($inputFolders as $inputFolder => $variables)
@@ -260,6 +260,22 @@ abstract class Rodent_PipelineController extends Rodent_AppController
           }
         }
       }
+      
+    // create a mapping of variable name to input folder, for the suffix properties that are connected
+    $connectedInputFolders = $this->getInputFolderConnectedDropdowns();
+    foreach($connectedInputFolders as $initialVarname => $properties)
+      {
+      $connectedVars = $properties['connected'];
+      foreach($connectedVars as $label => $connectedProperties)
+        {
+        $varname = $connectedProperties['varname'];
+        if(array_key_exists($varname, $caseSuffixes))
+          {
+          $varToFolder[$varname] = $connectedProperties['subFolder'];  
+          }
+        }
+      }
+ 
     
     // specific export for the cases chosen, for each suffix property
     foreach($caseSuffixes as $varName => $suffix)
@@ -269,16 +285,18 @@ abstract class Rodent_PipelineController extends Rodent_AppController
         $inputFolder = $varToFolder[$varName];  
         $executeComponent->exportCases($userDao, $taskDao, $configInputs, $caseFolders, $varName, $suffix, $inputFolder);
         }
+      else
+        {
+        // pass a blank string for this variable
+        $configInputs[$varName] = '';
+        }
       }
       
       
 
     // specific export for the multiitems chosen
     $executeComponent->exportMultiitems($userDao, $taskDao, $configInputs, $multiitems);  
-//need to do something with multiitem
-//prefix_multiitem_id_itemid
-//            combine them into a multiitem, make the multiitem a list, export everything the in the list, export as prefix_id
-  
+
   
     // export remaining inputs  
     $configParamsToBitstreamPaths = $executeComponent->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, $singleBitstreamItemIds);
