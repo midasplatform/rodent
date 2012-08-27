@@ -2,6 +2,27 @@ var midas = midas || {};
 midas.rodent = midas.rodent || {};
 midas.rodent.util = midas.rodent.util || {};
 
+
+midas.rodent.util.populateSubfolderSelect = function(folder_id, subfolder_name, select_id, optional) {
+    ajaxWebApi.ajax({
+        method: 'midas.rodent.list.case.suffixes',
+        args: 'folder_id=' + folder_id + "&selected_subfolder_name="+subfolder_name,
+        success: function(results) {
+            if(optional) {
+                // add in a blank suffix to exclude this variable
+                var suffixOption = '<option value="">None</option>';     
+                $('#'+select_id).append(suffixOption);
+            }
+            $.each(results.data.suffixes, function(index, suffix) {
+                var suffixOption = '<option value='+suffix.value+'>'+suffix.label+'</option>'; 
+                $('#'+select_id).append(suffixOption);
+            });
+        } //success
+    }); //ajax
+};
+
+
+
 // create a callback to run after selecting the cases folder
 midas.rodent.util.createCasesCallback = function(prefix, stepNumber, subFolders, subFoldersVariables) {
     return function(folder_id) {
@@ -29,33 +50,69 @@ midas.rodent.util.createCasesCallback = function(prefix, stepNumber, subFolders,
                 var suffixes_ul = '<table id="'+suffixes_ul_id+'"></table>';    
                 checkbox_div.append(suffixes_ul);
                   
+                // for each of the subfolders to get inputs from  
                 $.each(subFolders, function(ind, subFolder) {
                     var variables = subFoldersVariables[subFolder];
+                    // create a dropdown for each variable
                     $.each(variables, function(var_ind, variable) {
                         var suffixSelectId = prefix + "cases_suffix_"+variable.varname;
                         var suffixSelectClass = prefix + "cases_suffix";
                         var suffixSelectRow = '<tr><td>'+variable.label + '</td><td><select class="'+suffixSelectClass+'" id="'+suffixSelectId+'"></td></tr>';
                         $('#'+suffixes_ul_id).append(suffixSelectRow);
                         
-                        
-                        ajaxWebApi.ajax({
-                            method: 'midas.rodent.list.case.suffixes',
-                            args: 'folder_id=' + folder_id + "&selected_subfolder_name="+subFolder,
-                            success: function(results) {
-                                if(variable.optional) {
-                                    // add in a blank suffix to exclude this variable
-                                    var suffixOption = '<option value="">None</option>';     
-                                    $('#'+suffixSelectId).append(suffixOption);
-                                }
-                                    
-                                $.each(results.data.suffixes, function(index, suffix) {
-                                    var suffixOption = '<option value='+suffix.value+'>'+suffix.label+'</option>'; 
-                                    $('#'+suffixSelectId).append(suffixOption);
-                                });
-                            } //success
-                        }); //ajax
+                        // populate the dropdown with suffixes from the subfolder entries
+                        midas.rodent.util.populateSubfolderSelect(folder_id, subFolder, suffixSelectId, variable.optional);
                     }); //each variables
-                });  // seach subFolders
+                });  // each subFolders
+                
+                // now for each of the dropdowns tied to folders
+                $.each(json.inputs.caseFolderDropdownVariables, function(varname, dropdownparams) {
+
+                    // create a dropdown that can select between the dropdownvalues
+                    var initialSelectClass = prefix + "cases_initial";
+                    var initialSelectId = prefix + "cases_initial_"+varname;
+                    var connectedLabelCellId = initialSelectId + "_label_cell";
+                    var connectedDropdownCellId = initialSelectId + "_dropdown_cell";
+                    var initialSelectRow = '<tr><td>'+dropdownparams['label'] + '</td><td><select class="'+initialSelectClass+'" id="'+initialSelectId+'"></td><td id="'+connectedLabelCellId+'">thing</td><td id="'+connectedDropdownCellId+'">some</td></tr>';
+                    $('#'+suffixes_ul_id).append(initialSelectRow);
+                    
+                    
+                    function initialSelectChanged(selectedVal) {
+                        // clear out the existing cells associated with this id
+                        $('#'+connectedLabelCellId).empty();
+                        $('#'+connectedDropdownCellId).empty();
+                        
+                        // get the connected folder params associated with this value
+                        var connectedParams = dropdownparams['connected'][selectedVal];
+                        // create the connected dropdown
+                        var suffixSelectId
+                        var connectedSuffixSelectId = prefix + "cases_suffix_"+connectedParams.varname;
+                        var suffixSelectClass = prefix + "cases_suffix";
+                        var connectedSuffixDropdown = '<select class="'+suffixSelectClass+'" id="'+connectedSuffixSelectId+'">';
+                        $('#'+connectedLabelCellId).html(connectedParams.label);                        
+                        $('#'+connectedDropdownCellId).html(connectedSuffixDropdown);                        
+
+                        // populate the dropdown with suffixes from the subfolder entries
+                        midas.rodent.util.populateSubfolderSelect(folder_id, connectedParams.subFolder, connectedSuffixSelectId, connectedParams.optional);
+                    }
+                    
+                    // create an option in the initial drop down for each of the values    
+                    $.each(dropdownparams['connected'], function(dropdownvalue, inputfoldervariable) {
+                        var initialselectOption = '<option value="'+dropdownvalue+'">'+dropdownvalue+'</option>'; 
+                        $('#'+initialSelectId).append(initialselectOption);
+                    });
+                    
+                    // create an event handler for the initial drop down
+                    $('#'+initialSelectId).change(function() {
+                        var selectedVal = $('#'+initialSelectId).val();
+                        initialSelectChanged(selectedVal);
+                    });
+
+                    // call the code to set the connected select relative to the initial select's initial value
+                    var selectedVal = $('#'+initialSelectId).val();
+                    initialSelectChanged(selectedVal);
+                });
+
             } // success
         });  // ajax
     }; // return function
