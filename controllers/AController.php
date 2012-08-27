@@ -35,7 +35,7 @@ class Rodent_AController extends Rodent_PipelineController
   function getParameters()
     {
     //TODO want to add in default value for parameters
-    return array("average" => array("type" => "boolean", "label" => "Recompute the average?", "default" => true),
+    return array(
         "scalar" => array("type" => "boolean", "label" => "Is the input image a scalar image?"),
         "scaled" => array("type" => "boolean", "label" => "Are the inputs scaled at 1,1,1?"),
         "histogrammatch" => array("type" => "boolean", "label" => "Use histogram match?", "default" => true),
@@ -47,15 +47,36 @@ class Rodent_AController extends Rodent_PipelineController
   function getConfigScriptStem() { return "a"; }
   function getBmScript() { return "a1.pipeline.bms"; }
   
-  // TODO make optional: 
-  // TODO Francois will send an email describing originals and dti, there will probably have to be a special case UI component for these
-  // put the originals and dti stuff after setting the cases, try to put on the same page if possible b/c these relate to cases
+  // have a drop down: scalar/dti/dwi
+  
+  // scalar:
+  // show originals, call it Original Image, is optional, don't show dti, comes from 1-Converted
+  
+  // dti
+  // show dti (call it Original DTI), required, don't show Original Image, comes from 1-Converted
+  
+  // dwi
+  // show dti (call it Original DTI), required, don't show Original Image, comes from 2-REgistration
+  
+  function getInputFolderConnectedDropdowns() {
+      return array( 'imagetype' =>
+          array('label' => 'Image Type', 'connected' =>
+              array(
+              'Scalar' => 
+                  array('subFolder' => '1-Converted', 'label'=> 'Original Image', 'varname' => 'casesOriginals', 'optional' => 'true'),
+              'DTI' => 
+                  array('subFolder' => '1-Converted', 'label'=> 'Original DTI', 'varname' => 'casesDTIs'),
+              'DWI' => 
+                  array('subFolder' => '2-Registration', 'label'=> 'Original DTI', 'varname' => 'casesDTIs')                    
+              )
+          )
+      );
+  }
+  
   
   function getInputFolder() { return array(
       "2-Registration" => array(
           array("label"=> "inputs", "varname" => "casesInputs"),
-          array("label"=> "originals", "varname" => "casesOriginals"),
-          array("label"=> "dti", "varname" => "casesDTIs"),
           array("label"=> "transform", "varname" => "casesTransforms")),
       "3-SkullStripping-a" => array(
           array("label"=> "mask", "varname" => "casesMasks"))); }
