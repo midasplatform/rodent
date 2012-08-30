@@ -6,6 +6,27 @@
                 <Parameters>
                        <Parameter>
                                 <Type>1</Type>
+                                <Name>1op</Name>
+                                <Value>1op</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+#                                <SubParameter>
+#                                        <Type>1</Type>
+#                                        <Name>if</Name>
+#                                        <Value>if</Value>
+#                                        <External>0</External>
+#                                        <Optional>1</Optional>
+#                                </SubParameter>
+                       </Parameter>
+                       <Parameter>
+                                <Type>1</Type>
+                                <Name>if</Name>
+                                <Value>if</Value>
+                                <External>0</External>
+                                <Optional>1</Optional>
+                       </Parameter>
+                       <Parameter>
+                                <Type>1</Type>
                                 <Name>quantize</Name>
                                 <Value>quantize</Value>
                                 <External>0</External>
@@ -109,20 +130,6 @@
                                         <Type>1</Type>
                                         <Name>pad</Name>
                                         <Value>pad</Value>
-                                        <External>0</External>
-                                        <Optional>1</Optional>
-                                </SubParameter>
-                       </Parameter>
-                       <Parameter>
-                                <Type>1</Type>
-                                <Name>1op</Name>
-                                <Value>1op</Value>
-                                <External>0</External>
-                                <Optional>1</Optional>
-                                <SubParameter>
-                                        <Type>1</Type>
-                                        <Name>if</Name>
-                                        <Value>if</Value>
                                         <External>0</External>
                                         <Optional>1</Optional>
                                 </SubParameter>
