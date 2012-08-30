@@ -5,13 +5,13 @@
                 <Path>/midas/midas3base/batchmake/bin/N4ITKBiasFieldCorrection</Path>
                 <Parameters>
                         <Parameter>
-                                <Type>4</Type>
+                                <Type>1</Type>
                                 <Name>inputimage</Name>
                                 <Value>--inputimage</Value>
                                 <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
-                                        <Type>0</Type>
+                                        <Type>4</Type>
                                         <Name>inputimage</Name>
                                         <Value></Value>
                                         <External>0</External>
@@ -19,13 +19,13 @@
                                 </SubParameter>
                         </Parameter>
                         <Parameter>
-                                <Type>4</Type>
+                                <Type>1</Type>
                                 <Name>outputimage</Name>
                                 <Value>--outputimage</Value>
                                 <External>0</External>
                                 <Optional>1</Optional>
                                 <SubParameter>
-                                        <Type>0</Type>
+                                        <Type>4</Type>
                                         <Name>outputimage</Name>
                                         <Value></Value>
                                         <External>0</External>
