@@ -65,13 +65,23 @@ midas.rodent.pipeline.onFinishCallback = function()
      });
 
 
-     //var suffix = prefix+'cases_suffix';
-     //requestData[suffix] = $('#'+suffix).val();
-
      $.each($("."+prefix + "cases_suffix"), function(index, input) {
          requestData[input.id] = input.value;
      });
 
+     $.each($("."+prefix + "cases_suffix_connected_hidden"), function(index, input) {
+         // remove connected_hidden_ from var id
+         var id = input.id.replace('connected_hidden_', '');
+         requestData[id] = input.value;
+     });
+     
+     $.each($("."+prefix + "cases_multicheck_suffix"), function(index, input) {
+         if(input.type === "checkbox" && input.checked) {
+             requestData[input.id] = input.value;
+         }
+     });
+     
+     
 
      $.each($(".pipelineparameter"), function(index, input) {
          if(input.type === "checkbox") {

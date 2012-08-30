@@ -73,7 +73,7 @@ midas.rodent.util.createCasesCallback = function(prefix, stepNumber, subFolders,
                     var initialSelectId = prefix + "cases_initial_"+varname;
                     var connectedLabelCellId = initialSelectId + "_label_cell";
                     var connectedDropdownCellId = initialSelectId + "_dropdown_cell";
-                    var initialSelectRow = '<tr><td>'+dropdownparams['label'] + '</td><td><select class="'+initialSelectClass+'" id="'+initialSelectId+'"></td><td id="'+connectedLabelCellId+'">thing</td><td id="'+connectedDropdownCellId+'">some</td></tr>';
+                    var initialSelectRow = '<tr><td>'+dropdownparams['label'] + '</td><td><select class="'+initialSelectClass+'" id="'+initialSelectId+'"></td><td id="'+connectedLabelCellId+'"></td><td id="'+connectedDropdownCellId+'"></td></tr>';
                     $('#'+suffixes_ul_id).append(initialSelectRow);
                     
                     
@@ -94,12 +94,44 @@ midas.rodent.util.createCasesCallback = function(prefix, stepNumber, subFolders,
 
                         // populate the dropdown with suffixes from the subfolder entries
                         midas.rodent.util.populateSubfolderSelect(folder_id, connectedParams.subFolder, connectedSuffixSelectId, connectedParams.optional);
+
+                        // remove all hidden variables of this type
+                        // this won't work if we have more than one grouping, but we only have one for now
+                        var hiddenClass = prefix + "cases_suffix_connected_hidden";
+                        $('.'+hiddenClass).remove();
+
+                        // now add in hidden variables for others than the connected suffix dropdown
+                        // and only add them uniquely as some rows may share a variable
+                        $.each(dropdownparams['connected'], function(dropdownvalue, inputfoldervariable) {
+                            if(selectedVal !== dropdownvalue) {
+                                // check existence first so we don't double add hiddens of the same id
+                                // also check that a select doesn't exist tied to this varname
+                                var hiddenId = prefix + "cases_suffix_connected_hidden_" + inputfoldervariable.varname;
+                                var existingHiddens = $('#'+hiddenId);
+                                var connectedSuffixSelectId = prefix + "cases_suffix_" + inputfoldervariable.varname;
+                                var existingConnecteds = $('#'+connectedSuffixSelectId);
+                                if(existingHiddens.length === 0 && existingConnecteds.length === 0) {
+                                    checkbox_div.append('<input type="hidden" class="'+hiddenClass+'" id="'+hiddenId+'" value=""/>');
+                                }
+                            }
+                        });
+
+                         
                     }
                     
-                    // create an option in the initial drop down for each of the values    
+                    // create an option in the initial drop down for each of the values
+                    // also create a blank hidden variable for each of these, that should be removed when
+                    // that option is chosen
                     $.each(dropdownparams['connected'], function(dropdownvalue, inputfoldervariable) {
                         var initialselectOption = '<option value="'+dropdownvalue+'">'+dropdownvalue+'</option>'; 
                         $('#'+initialSelectId).append(initialselectOption);
+                        var hiddenId = prefix + "cases_suffix_connected_hidden_" + inputfoldervariable.varname;
+                        var hiddenClass = prefix + "cases_suffix_connected_hidden";
+                        // check existence first so we don't double add hiddens of the same id
+                        var existingIds = $('#'+hiddenId);
+                        if(existingIds.length === 0) {
+                            checkbox_div.append('<input type="hidden" class="'+hiddenClass+'" id="'+hiddenId+'" value=""/>');
+                        }
                     });
                     
                     // create an event handler for the initial drop down
@@ -113,6 +145,32 @@ midas.rodent.util.createCasesCallback = function(prefix, stepNumber, subFolders,
                     initialSelectChanged(selectedVal);
                 });
 
+
+                // now for each of the multiselects tied to folders
+                $.each(json.inputs.caseFolderMultiVariables, function(folder, variables) {
+                    console.log(folder);
+                    console.log(variables);
+                    $.each(variables, function(index, variable) {
+                        // create a label on one row
+                        var multicheckLabelRowId = prefix + "cases_multicheck_labelrow_" + variable.varname;
+                        var labelRow = '<tr id="'+multicheckLabelRowId+'"><td>'+variable.label+'</td></tr>';
+                        $('#'+suffixes_ul_id).append(labelRow);
+                        var multicheckSuffixClass = prefix + "cases_multicheck_suffix";
+                        
+                        // now for each suffix create a checkbox
+                        ajaxWebApi.ajax({
+                            method: 'midas.rodent.list.case.suffixes',
+                            args: 'folder_id=' + folder_id + "&selected_subfolder_name="+folder,
+                            success: function(results) {
+                                $.each(results.data.suffixes, function(index, suffix) {
+                                    var checkId = prefix + "cases_multicheck_" + variable.varname + "_" + suffix.label;
+                                    var suffixCheckRow = '<tr><td></td><td><input type="checkbox" id="'+checkId+'" class="'+multicheckSuffixClass+'"/></td><td>'+suffix.label+'</td></tr>'; 
+                                    $(suffixCheckRow).insertAfter('#'+multicheckLabelRowId);
+                                });
+                            } //success
+                       }); //ajax
+                    });
+                });
             } // success
         });  // ajax
     }; // return function
