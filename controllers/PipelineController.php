@@ -63,6 +63,8 @@ abstract class Rodent_PipelineController extends Rodent_AppController
 
   function getInputFolderConnectedDropdowns() { return array(); }
   function getInputFolderMultiselects() { return array(); }
+  function getDefaultCasesFolder() { return '455'; }
+  
   
   /** init a job*/
   
@@ -88,6 +90,14 @@ abstract class Rodent_PipelineController extends Rodent_AppController
     $inputs["singleItems"] = $this->getSingleItemSelections();
     $inputs["parameters"] = $this->getParameters();
     $inputs["controllerPath"] = $this->getConfigScriptStem();
+
+    $defaultCasesFolder = $this->getDefaultCasesFolder();
+    if($defaultCasesFolder !== '')
+      {
+      $inputs["defaultCasesFolder"] = $defaultCasesFolder;
+      }
+
+    
     
     $processSteps = array();
     $processStepInd = 1;

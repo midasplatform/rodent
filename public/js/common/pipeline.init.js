@@ -171,7 +171,11 @@ midas.rodent.pipeline.onShowStepCallback = function(obj)  {
         var subFolders = json.inputs.casesFolderNames;
         var subFolderVariables = json.inputs.caseFolderVariables;
         midas.rodent.pipeline.selectionCallbacks[id] = midas.rodent.util.createCasesCallback(prefix, step_num, subFolders, subFolderVariables);
-
+        var callback = midas.rodent.pipeline.selectionCallbacks[id];
+        if(json.inputs.defaultCasesFolder) {
+            callback(json.inputs.defaultCasesFolder);
+        }
+        
 
         
         $('#'+id+'_button').click(function(){
