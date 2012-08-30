@@ -31,7 +31,7 @@ class Rodent_StController extends Rodent_PipelineController
   function getSingleItemSelections() { return array(); }
   function getParameters()
     {
-    return array("labelssuffixes" => array("type" => "text", "label" => "Label map suffixes", "default" => true));
+    return array("labelssuffixes" => array("type" => "text", "label" => "Label map suffixes", "default" => "_dti_f_reg_FA.nrrd"));
     }
   function getSingleBitstreamItemParams() { return array(); }
   function getPostscriptPath() { return BASE_PATH . '/modules/rodent/library/py/a_condor_postscript.py'; }

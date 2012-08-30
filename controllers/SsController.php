@@ -65,11 +65,11 @@ class Rodent_SsController extends Rodent_PipelineController
   // add in the "optional" => "true" key-value
   function getInputFolder() { return array(
       "2-Registration" => array(
-          array("label"=> "inputs", "varname" => "casesInputs"),
+          array("label"=> "Inputs used for registration", "varname" => "casesInputs"),
       //TODO    
       // we have recently added this here, moved it from parameters, but the
       // batchmake script needs to be updated to deal with this change
-          array("label"=> "segmentation", "varname" => "segimagestype", "optional" => "true")
+          array("label"=> "Inputs used for segmentation (if none, suffix above will be used)", "varname" => "segimagestype", "optional" => "true")
           )); }
   //TODO
   // we'd like to have another variable here that would be templategridfile, that should be optional
@@ -108,18 +108,16 @@ class Rodent_SsController extends Rodent_PipelineController
   // autopopulated in the UI
   function getParameters()
     {
-    return array("newmasktag" => array("type" => "text", "label" => "Tag of the mask that will be created"),
-	"rigid" => array("type" => "boolean", "label" => "Using rigid transformation?", 'default' => true),
-        "registration" => array("type" => "boolean", "label" => "Do registration?", 'default' => true),
-        "biasfieldcorrection" => array("type" => "boolean", "label" => "Use bias field correction?"),
-        "rigidisFA" => array("type" => "boolean", "label" => "rigid is FA"),
-        "scalar" => array("type" => "boolean", "label" => "Is the input scalar?"),
-//        "scaled" => array("type" => "boolean", "label" => "Is the input scaled?"),
-        "filtercurvature" => array("type" => "boolean", "label" => "filtercurvature?", 'default' => true),
+    return array("newmasktag" => array("type" => "text", "label" => "Tag of the mask that will be created", 'default' => 'mask'),
+        "registration" => array("type" => "boolean", "label" => "Perform registration", 'default' => true),
+        "rigid" => array("type" => "boolean", "label" => "Perform rigid registration", 'default' => true),
+        "biasfieldcorrection" => array("type" => "boolean", "label" => "Perform bias field correction"),
+        "rigidisFA" => array("type" => "boolean", "label" => "Registration image is FA"),
+        "rigidisMD" => array("type" => "boolean", "label" => "Registration image is MD"),
+        "scalar" => array("type" => "boolean", "label" => "Original input image is scalar"),
+        "filtercurvature" => array("type" => "boolean", "label" => "Filter curvature (Otherwise Gradient anisotropic diffusion is used)", 'default' => true),
         "radius" => array("type" => "text", "label" => "radius", 'default' => '5'),
-        "abcpriors" => array("type" => "text", "label" => "abcpriors", 'default' => '1 1 1 1'),
-        "rigidisMD" => array("type" => "boolean", "label" => "rigidisMD"),
-        "sequence" => array("type"=>"text", "label"=>"sequence 0 NB_LOOPS 1", 'default' => '0 0 1'));
+        "abcpriors" => array("type" => "text", "label" => "Probability maps priors", 'default' => '1 1 1 1'));
     }
     
   // states that the templategridfile has only one bitstream, used for exporting to the filesystem 

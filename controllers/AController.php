@@ -37,9 +37,8 @@ class Rodent_AController extends Rodent_PipelineController
     //TODO want to add in default value for parameters
     return array(
         "scaled" => array("type" => "boolean", "label" => "Are the inputs scaled at 1,1,1?"),
-        "histogrammatch" => array("type" => "boolean", "label" => "Use histogram match?", "default" => true),
-        // TODO Francois will change the bms to hard code this, after he contacts me I'll remove radius
-        "radius" => array("type" => "text", "label" => "radius", "default" => "1"));
+        "histogrammatch" => array("type" => "boolean", "label" => "Use histogram match?", "default" => true)
+        );
     }
   function getSingleBitstreamItemParams() { return array("populationaveragefile" => "Population Average File", "segmentationfile" => "Segmentation file", "imagegridfile" => "Image grid file"); }
   function getPostscriptPath() { return BASE_PATH . '/modules/rodent/library/py/a_condor_postscript.py'; }

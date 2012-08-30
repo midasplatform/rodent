@@ -38,11 +38,11 @@ class Rodent_RController extends Rodent_PipelineController
     // TODO if even more time permits, verify orientation to be some ordered combination
     // of 1 per group of (L/R) (P/A) (S/I), this is low priority
       
-    return array("bias" => array("type" => "boolean", "label" => "Correct bias", "default" => true),
-        "skullstrip" => array("type" => "boolean", "label" => "Use skullstrip function?", "default" => true),
-        "scaled" => array("type" => "boolean", "label" => "Are the inputs scaled at 1,1,1?"),
+    return array("bias" => array("type" => "boolean", "label" => "Bias correction", "default" => true),
+        "skullstrip" => array("type" => "boolean", "label" => "Perform a coarse skullstripping before registration"),
+        "scaled" => array("type" => "boolean", "label" => "Scale to 1,1,1 spacing"),
         "inputType" => array("type" => "select", "label" => "Input Type", "options" => array("DTI","DWI","scalar")),
-        "orientation" => array("type" => "text", "label" => "Manual orientation", "default" => "LPS"));
+        "orientation" => array("type" => "text", "label" => "Manual orientation (LPS/RAS/...)", "default" => ""));
     }
   function getSingleBitstreamItemParams() { return array("segmentationfile" => "Segmentation file", "templatefile" => "Template file"); }
   function getPostscriptPath() { return BASE_PATH . '/modules/rodent/library/py/a_condor_postscript.py'; }
@@ -52,12 +52,12 @@ class Rodent_RController extends Rodent_PipelineController
   
   // TODO make additionalimages and additionalimagesnn, transform and initialtransform optional once we can make them optional
   function getInputFolder() { return array(
-      "2-Registration" => array(
-          array("label"=> "inputs", "varname" => "casesInputs"),
-          array("label"=> "additionalimages", "varname" => "casesAdditionalImages"),
-          array("label"=> "additionalimagesnn", "varname" => "casesAdditionalImagesNN"),
-          array("label"=> "transform", "varname" => "casesTransforms"),
-          array("label"=> "initialtransform", "varname" => "casesInitialTransforms"))); }
+      "1-Converted" => array(
+          array("label"=> "Inputs", "varname" => "casesInputs"),
+          array("label"=> "Additional images to transform", "varname" => "casesAdditionalImages" , "optional" => "true"),
+          array("label"=> "Additional images to transform (NN interpolation)", "varname" => "casesAdditionalImagesNN" , "optional" => "true"),
+          array("label"=> "Transform (no registration performed)", "varname" => "casesTransforms" , "optional" => "true"),
+          array("label"=> "Initial transform", "varname" => "casesInitialTransforms" , "optional" => "true"))); }
   function getOutputFolderStem() { return array(
       array("output_folder_type" => "cases_child", "name" => "2-Registration")); }
   
