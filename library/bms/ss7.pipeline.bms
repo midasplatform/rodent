@@ -1,7 +1,7 @@
 echo()
 echo('ss7')
 echo()
-    set(i ${testVar})
+#    set(i ${testVar})
     echo ( ${i} )
     Set( ABC_Case_DIR ${tempDir}/${Case}/ABC${i} )
     MakeDirectory( ${ABC_Case_DIR} )

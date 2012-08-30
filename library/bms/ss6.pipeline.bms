@@ -1,5 +1,7 @@
 # ABC
 echo('ss6 and templateDir = ' ${templateDir})
+
+
 WriteFile (${ABCfile} '<?xml version="1.0"?>\n')
 AppendFile(${ABCfile} '<!DOCTYPE SEGMENTATION-PARAMETERS>\n')
 AppendFile(${ABCfile} '<SEGMENTATION-PARAMETERS>\n')
@@ -26,13 +28,14 @@ EndIf(${Registration} == TRUE )
 AppendFile(${ABCfile} '<ATLAS-ORIENTATION>file</ATLAS-ORIENTATION>\n')
 AppendFile(${ABCfile} '<OUTPUT-DIRECTORY>'${ABC_Case_DIR}'</OUTPUT-DIRECTORY>\n')
 AppendFile(${ABCfile} '<OUTPUT-FORMAT>nrrd</OUTPUT-FORMAT>\n')
+echo( ${iteration})
+echo(${ABC_IMAGE_SUFFIX})
+GetParam (ABC_IMAGE_FILE ${ABC_IMAGE_SUFFIX} ${iteration} )
 
-ForEach (Type ${ABC_IMAGE_SUFFIX})
-   AppendFile(${ABCfile} '<IMAGE>\n')
-   AppendFile(${ABCfile} ' <FILE>'${InputSubjDir}/${Case}${Type}'</FILE>\n')
-   AppendFile(${ABCfile} ' <ORIENTATION>'file'</ORIENTATION>\n')
-   AppendFile(${ABCfile} '</IMAGE>\n')
-EndForEach (Type ${ABC_IMAGE_SUFFIX})
+AppendFile(${ABCfile} '<IMAGE>\n')
+AppendFile(${ABCfile} ' <FILE>'${ABC_IMAGE_FILE}'</FILE>\n')
+AppendFile(${ABCfile} ' <ORIENTATION>'file'</ORIENTATION>\n')
+AppendFile(${ABCfile} '</IMAGE>\n')
 
 AppendFile(${ABCfile} '<FILTER-ITERATIONS>1</FILTER-ITERATIONS>\n')
 AppendFile(${ABCfile} '<FILTER-TIME-STEP>0.001</FILTER-TIME-STEP>\n')

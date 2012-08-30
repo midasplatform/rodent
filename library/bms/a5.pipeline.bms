@@ -222,7 +222,6 @@ set( AverageName AverageTensor_SS AverageTensor )
 ################################################################################
 
 Set( count 0 )
-#### FRANCOIS : foreach sur AverageName ou sur list????
 
 foreach( i ${AverageName} )
   if( ${count} == 0 )
@@ -259,6 +258,7 @@ foreach( i ${AverageName} )
 
   echo( ${unuCmd} )
   If( ${step} < 25 )
+    CondorPostScript(unuCmd ${cfg_exe} ${cfg_condorpostscript} ${cfg_output_directory} ${averageTensorFloat} ${sibling_outputFolderId})
     run( output ${unuCmd} )
     echo( ${output} )
   EndIf( ${step} < 25 )

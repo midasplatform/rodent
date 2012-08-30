@@ -74,6 +74,8 @@ ForEach( i ${CASES} )
   GetFilename (OneCaseNoPath ${OneCase} NAME)
   RegEx (INPUT_SUFFIX ${OneCaseNoPath} ${i} REPLACE '')
 
+  GetParam(OneCase_outputFolderIds ${cases_outputFolderIds} ${iteration1})
+
   GetParam(OneTransform ${casesTransforms} ${iteration1})
   If(${OneTransform} != '')
     GetFilename (OneTransformNoPath ${OneTransform} NAME)

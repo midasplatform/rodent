@@ -1,6 +1,7 @@
 ############Include needed files#######################
 # properties from midas
-include( w.dummy.bms)
+#include( w.dummy.bms)
+include(w.config.bms)
 
 set(CASES ${cases})
 set(USE_INV_HFIELD ${usinghfield})
@@ -26,7 +27,7 @@ RegEx ( InvHField_Suffix ${WithoutPath} ${OneCase} REPLACE '')
 
 #set( ${populationatlasfile})
 #set( ${segmentationfile})
-set(IterationNumber ${iterationnumber})
+#set(IterationNumber ${iterationnumber})
 
 set( tempDir ${cfg_output_directory}/temp)
 set( dir ${cfg_output_directory}/Warping)
@@ -73,7 +74,7 @@ set(Incrementation 0)
 
 ForEach( i ${CASES} )
 
-  set(${Incrementation} 1)
+#  set(${Incrementation} 1)
 
   ######################Mask case image###########################
   set (OutSubjDir ${dir}/${OUTPUT_PRE_SUBDIR}/${i})
@@ -85,7 +86,8 @@ ForEach( i ${CASES} )
   echo('Without Path = ' ${WithoutPath})
   RegEx ( InSubjDir ${OneCase} ${WithoutPath} REPLACE '') 
   
-  MakeDirectory( ${OutSubjDir}/${PROCESS_SUBDIR} )
+#  MakeDirectory( ${OutSubjDir}/${PROCESS_SUBDIR} )
+  GetParam ( OutputFolderId ${outputFolderIds} ${Incrementation} )
 
   Set( image ${InSubjDir}/${i}${WARP_INPUT_SUFFIX} )
 
@@ -246,8 +248,10 @@ ForEach( i ${CASES} )
   
    
     echo( ${rv2EndOfScript} )
+    CondorPostScript(rv2EndOfScript ${cfg_exe} ${cfg_condorpostscript} ${cfg_output_directory} ${ResampledImage} ${OutputFolderId})
     run( output ${rv2EndOfScript} )
     echo( ${output} )
   EndForEach(j ${LabelMapsToWarp} )
+  set(${Incrementation} 1)
 EndForEach( i ${CASES} )
 

@@ -1,10 +1,18 @@
-include(st.dummy.bms)
+#include(st.dummy.bms)
+include( st.config.bms)
 
 set(CASES ${cases})
 set(iteration 0)
 set(PROCESS_SUBDIR '')
 set(LabelMapsSuffix ${labelssuffixes})
-Set(STAT_FILE_SUFFIX ${statssuffixes})
+#Set(STAT_FILE_SUFFIX ${statssuffixes})
+
+
+# setting STAT_FILE_SUFFIX
+GetParam (OneCase ${statinputs} 0)
+GetParam (OneCasePrefix ${cases} 0)
+RegEx ( WithoutPath ${OneCase} '/.+/' REPLACE '')
+RegEx ( STAT_FILE_SUFFIX ${WithoutPath} ${OneCasePrefix} REPLACE '')
 
 ForEach( i ${CASES} )
   ######################Mask case image###########################
@@ -16,6 +24,7 @@ ForEach( i ${CASES} )
   RegEx(InSubjDir ${OneCase} ${WithoutPath} REPLACE '')
   
   MakeDirectory( ${OutSubjDir}/${PROCESS_SUBDIR} )
+  GetParam ( OutputFolderId ${outputFolderIds} ${iteration} )
 
   #####Resample atlas############
   ForEach(j ${LabelMapsSuffix} )
@@ -31,6 +40,7 @@ ForEach( i ${CASES} )
       SetAppOption(imageStat.label.label ${ResampledImage})
       SetAppOption(imageStat.outbase 1)
       SetAppOption(imageStat.outbase.outbase ${OutSubjDir}/${PROCESS_SUBDIR}/${i}${name}${k_noext})
+      CondorPostScript(imageStat ${cfg_exe} ${cfg_condorpostscript} ${cfg_output_directory} ${OutSubjDir}/${PROCESS_SUBDIR}/${i}${name}${k_noext}_stat.txt ${OutputFolderId})
       Run( output ${imageStat} )
       Echo( ${output} )
     endforeach( k ${STAT_FILE_SUFFIX} )

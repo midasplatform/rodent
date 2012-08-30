@@ -92,7 +92,7 @@ EndIf(${rootName} != '')
 Set( BiasCorrection ${BIAS})
 
 #  script += SetBOOL( copyInputImages , "COPY_INPUTS_IMAGES" ) ; NB : hardcoded in xml
-Set( COPY_INPUTS_IMAGES TRUE)
+Set( COPY_INPUTS_IMAGES FALSE)
 
 #  script += SetBOOL( donotcopyInputTransforms , "DONT_COPY_INPUTS_TRANS" ) ; NB : hardcoded in xml
 Set( DONT_COPY_INPUTS_TRANS FALSE)
