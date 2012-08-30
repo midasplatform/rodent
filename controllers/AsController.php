@@ -29,7 +29,7 @@ class Rodent_AsController extends Rodent_AppController
   /** init a job*/
   function initAction()
     {
-    $this->view->header = "Atlas Segmentation Pipeline Wizard";
+    $this->view->header = "Average Segmentation Pipeline Wizard";
     if(!$this->logged)
       {
       $this->haveToBeLogged();
