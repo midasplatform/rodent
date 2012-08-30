@@ -38,7 +38,7 @@ class Rodent_RController extends Rodent_PipelineController
     // TODO if even more time permits, verify orientation to be some ordered combination
     // of 1 per group of (L/R) (P/A) (S/I), this is low priority
       
-    return array("bias" => array("type" => "boolean", "label" => "Correct bias?", "default" => true),
+    return array("bias" => array("type" => "boolean", "label" => "Correct bias", "default" => true),
         "skullstrip" => array("type" => "boolean", "label" => "Use skullstrip function?", "default" => true),
         "scaled" => array("type" => "boolean", "label" => "Are the inputs scaled at 1,1,1?"),
         "inputType" => array("type" => "select", "label" => "Input Type", "options" => array("DTI","DWI","scalar")),
