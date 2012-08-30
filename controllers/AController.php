@@ -23,7 +23,7 @@ class Rodent_AController extends Rodent_PipelineController
 {
 
   function getPipelinePrefix() { return "rodent_atlas_"; }
-  function getUiTitle() { return "Average Pipeline Wizard"; }
+  function getUiTitle() { return "Average Computation Pipeline Wizard"; }
   function getCasesSelection() { return array('id'=> "casesdirectory", 'label' => "Select the Cases Directory"); }
   function getMultiItemSelections() { return array(); }
                                  
@@ -36,7 +36,6 @@ class Rodent_AController extends Rodent_PipelineController
     {
     //TODO want to add in default value for parameters
     return array(
-        "scalar" => array("type" => "boolean", "label" => "Is the input image a scalar image?"),
         "scaled" => array("type" => "boolean", "label" => "Are the inputs scaled at 1,1,1?"),
         "histogrammatch" => array("type" => "boolean", "label" => "Use histogram match?", "default" => true),
         // TODO Francois will change the bms to hard code this, after he contacts me I'll remove radius
@@ -67,13 +66,13 @@ class Rodent_AController extends Rodent_PipelineController
               'DTI' => 
                   array('subFolder' => '1-Converted', 'label'=> 'Original DTI', 'varname' => 'casesDTIs'),
               'DWI' => 
-                  array('subFolder' => '2-Registration', 'label'=> 'Original DTI', 'varname' => 'casesDTIs')                    
+                  array('subFolder' => '2-Registration', 'label'=> 'Original DTI', 'varname' => 'casesDWIs')                    
               )
           )
       );
   }
   
-  
+
   function getInputFolder() { return array(
       "2-Registration" => array(
           array("label"=> "inputs", "varname" => "casesInputs"),

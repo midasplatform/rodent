@@ -41,7 +41,7 @@ class Rodent_RController extends Rodent_PipelineController
     return array("bias" => array("type" => "boolean", "label" => "Correct bias?", "default" => true),
         "skullstrip" => array("type" => "boolean", "label" => "Use skullstrip function?", "default" => true),
         "scaled" => array("type" => "boolean", "label" => "Are the inputs scaled at 1,1,1?"),
-        "inputType" => array("type" => "text", "label" => "What is the input type? (DWI, DTI, scalar)", "default" => "DTI"),
+        "inputType" => array("type" => "select", "label" => "Input Type", "options" => array("DTI","DWI","scalar")),
         "orientation" => array("type" => "text", "label" => "Manual orientation", "default" => "LPS"));
     }
   function getSingleBitstreamItemParams() { return array("segmentationfile" => "Segmentation file", "templatefile" => "Template file"); }
