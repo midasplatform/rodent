@@ -62,7 +62,8 @@ abstract class Rodent_PipelineController extends Rodent_AppController
   abstract function getOutputFolderStem();
 
   function getInputFolderConnectedDropdowns() { return array(); }
-    
+  function getInputFolderMultiselects() { return array(); }
+  
   /** init a job*/
   
   function initAction()
@@ -81,6 +82,7 @@ abstract class Rodent_PipelineController extends Rodent_AppController
     $inputs["casesFolderNames"] = array_keys($this->getInputFolder());
     $inputs["caseFolderVariables"] = $this->getInputFolder();
     $inputs["caseFolderDropdownVariables"] = $this->getInputFolderConnectedDropdowns();
+    $inputs["caseFolderMultiVariables"] = $this->getInputFolderMultiselects();
     
     $inputs["multiItems"] = $this->getMultiItemSelections();
     $inputs["singleItems"] = $this->getSingleItemSelections();
@@ -181,11 +183,14 @@ abstract class Rodent_PipelineController extends Rodent_AppController
     $substrInd = strlen($pipelinePrefix);
     $caseFolderPrefix = $pipelinePrefix . "casefolder_";
     $caseFolderSuffix = $pipelinePrefix . "cases_suffix";
+    $caseFolderMulticheckPrefix = $pipelinePrefix . "cases_multicheck_";
+    $caseFolderMulticheckSubstrInd = strlen($caseFolderMulticheckPrefix);
     $caseFolderSubstrInd = strlen($caseFolderPrefix);
     $multiitemPrefix = $pipelinePrefix . "multiitem_";
     $multiitemSubstrInd = strlen($multiitemPrefix);
     $caseFolders = array();
     $caseSuffixes = array();
+    $casesMultichecks = array();
     $multiitems = array();
     foreach($inputParams as $inputParam => $value)
       {
@@ -217,6 +222,19 @@ abstract class Rodent_PipelineController extends Rodent_AppController
             }
           $multiitems[$paramId][] = $itemId;  
           }
+        else if(strpos($inputParam, $caseFolderMulticheckPrefix) === 0)
+          {
+          $multicheckVarAndSuffix = substr($inputParam, $caseFolderMulticheckSubstrInd);
+          // find the first _ to separate the var name from the suffix
+          $firstUnderscoreInd = strpos($multicheckVarAndSuffix, "_");
+          $suffix = substr($multicheckVarAndSuffix, $firstUnderscoreInd+1);
+          $varname = substr($multicheckVarAndSuffix, 0, $firstUnderscoreInd);
+          if(!array_key_exists($varname, $casesMultichecks)) 
+            {
+            $casesMultichecks[$varname] = array();  
+            }
+          $casesMultichecks[$varname][] = $suffix;
+          }          
         else
           {
           // upper case boolean values for BatchMake
@@ -276,6 +294,44 @@ abstract class Rodent_PipelineController extends Rodent_AppController
         }
       }
  
+    // create a mapping of ??? for the multiselects
+    $inputFolderMultiselect = $this->getInputFolderMultiselects();
+    foreach($inputFolderMultiselect as $inputFolder => $rows)
+      {
+      foreach($rows as $properties)
+        {
+        $varname = $properties['varname'];
+        $varToFolder[$varname] = $inputFolder;  
+        }
+      }
+  /*
+   * 
+   *   function getInputFolderMultiselects() { return array(
+      "2-Registration" => array(
+          array("label"=> "inputs", "varname" => "mcasesInputs"),
+          array("label"=> "transform", "varname" => "mcasesTransforms")),
+      "3-SkullStripping-a" => array(
+          array("label"=> "mask", "varname" => "mcasesMasks")));
+  }
+  
+// now we have $casesMultichecks: varname => list of suffixes
+// $varToFolder: varname => input folder
+    foreach($casesMultichecks as $varname => $suffixes)
+      {
+      $inputFolder = $varToFolder[$varname];
+// what to do now to export????
+      inputs
+	_dti_f_reg.nrrd
+	_dti_f.nrrd
+              
+      inputs_suffixes '_dti_f_reg.nrrd' '_dti_f.nrrd'
+      inputs 'fullpathto_case1_suffix1' 'fullpathto_case1_suffix2' 'fullpathto_case2_suffix1' 'fullpathto_case2_suffix2')
+
+      
+                     
+      }
+  */
+  
     
     // specific export for the cases chosen, for each suffix property
     foreach($caseSuffixes as $varName => $suffix)
