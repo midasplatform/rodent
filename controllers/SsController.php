@@ -155,7 +155,7 @@ class Rodent_SsController extends Rodent_PipelineController
   //       3-SkullStripping-121
   
   function getOutputFolderStem() { return array(
-      array("output_folder_type" => "cases_child", "name" => "3-SkullStripping")); }
+      array("output_folder_type" => "cases_child", "name" => "3-SkullStripping", "redirect" => true)); }
       
       
       

@@ -59,6 +59,6 @@ class Rodent_RController extends Rodent_PipelineController
           array("label"=> "Transform (no registration performed)", "varname" => "casesTransforms" , "optional" => "true"),
           array("label"=> "Initial transform", "varname" => "casesInitialTransforms" , "optional" => "true"))); }
   function getOutputFolderStem() { return array(
-      array("output_folder_type" => "cases_child", "name" => "2-Registration")); }
+      array("output_folder_type" => "cases_child", "name" => "2-Registration", "redirect" => true)); }
   
 }//end class  NOTE : it's going to look for the files in the 2-Reg dir in MIDAS, this needs to be changed in the future
