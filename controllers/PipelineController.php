@@ -71,7 +71,7 @@ abstract class Rodent_PipelineController extends Rodent_AppController
   //    array("label"=> "inputs", "varname" => "mcasesInputs")));
   //  }
   
-  function getDefaultCasesFolder() { return array('folder_id' =>'509', 'folder_path' => 'Rodent/Public/RPV0002/cases'); }
+  function getDefaultCasesFolder() { return array('folder_id' =>'455', 'folder_path' => 'Rodent/Public/RPV0002/cases'); }
   
   
   /** init a job*/
