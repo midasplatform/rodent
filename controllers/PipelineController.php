@@ -63,7 +63,7 @@ abstract class Rodent_PipelineController extends Rodent_AppController
 
   function getInputFolderConnectedDropdowns() { return array(); }
   function getInputFolderMultiselects() { return array(); }
-  function getDefaultCasesFolder() { return '455'; }
+  function getDefaultCasesFolder() { return array('folder_id' =>'455', 'folder_path' => 'Rodent/Public/RPV0002/cases'); }
   
   
   /** init a job*/
