@@ -63,7 +63,15 @@ abstract class Rodent_PipelineController extends Rodent_AppController
 
   function getInputFolderConnectedDropdowns() { return array(); }
   function getInputFolderMultiselects() { return array(); }
-  function getDefaultCasesFolder() { return array('folder_id' =>'455', 'folder_path' => 'Rodent/Public/RPV0002/cases'); }
+  // use like this in a subclass:
+  //function getInputFolderMultiselects() 
+  //  { 
+  //  return array(
+  //    "2-Registration" => array(
+  //    array("label"=> "inputs", "varname" => "mcasesInputs")));
+  //  }
+  
+  function getDefaultCasesFolder() { return array('folder_id' =>'509', 'folder_path' => 'Rodent/Public/RPV0002/cases'); }
   
   
   /** init a job*/
@@ -234,7 +242,9 @@ abstract class Rodent_PipelineController extends Rodent_AppController
           }
         else if(strpos($inputParam, $caseFolderMulticheckPrefix) === 0)
           {
-          $multicheckVarAndSuffix = substr($inputParam, $caseFolderMulticheckSubstrInd);
+          // because we lose '.', they get translated to '_', use the value
+          // since we are passing the id back in the value as well
+          $multicheckVarAndSuffix = substr($value, $caseFolderMulticheckSubstrInd);
           // find the first _ to separate the var name from the suffix
           $firstUnderscoreInd = strpos($multicheckVarAndSuffix, "_");
           $suffix = substr($multicheckVarAndSuffix, $firstUnderscoreInd+1);
@@ -304,7 +314,7 @@ abstract class Rodent_PipelineController extends Rodent_AppController
         }
       }
  
-    // create a mapping of ??? for the multiselects
+    // create a mapping of variable name to input folder for the multiselects
     $inputFolderMultiselect = $this->getInputFolderMultiselects();
     foreach($inputFolderMultiselect as $inputFolder => $rows)
       {
@@ -314,35 +324,19 @@ abstract class Rodent_PipelineController extends Rodent_AppController
         $varToFolder[$varname] = $inputFolder;  
         }
       }
-  /*
-   * 
-   *   function getInputFolderMultiselects() { return array(
-      "2-Registration" => array(
-          array("label"=> "inputs", "varname" => "mcasesInputs"),
-          array("label"=> "transform", "varname" => "mcasesTransforms")),
-      "3-SkullStripping-a" => array(
-          array("label"=> "mask", "varname" => "mcasesMasks")));
-  }
-  
-// now we have $casesMultichecks: varname => list of suffixes
-// $varToFolder: varname => input folder
-    foreach($casesMultichecks as $varname => $suffixes)
-      {
-      $inputFolder = $varToFolder[$varname];
-// what to do now to export????
-      inputs
-	_dti_f_reg.nrrd
-	_dti_f.nrrd
-              
-      inputs_suffixes '_dti_f_reg.nrrd' '_dti_f.nrrd'
-      inputs 'fullpathto_case1_suffix1' 'fullpathto_case1_suffix2' 'fullpathto_case2_suffix1' 'fullpathto_case2_suffix2')
-
       
-                     
+    foreach($casesMultichecks as $variable => $suffixes)
+      {
+      // export all selected suffixes in a single variable
+      // if the variable was named inputs would want a line like
+      // Set(inputs_suffixes '_dti_f_reg.nrrd' '_dti_f.nrrd')
+      $configInputs[$variable . "_suffixes"] = $suffixes;
+      // specific export for the multiselected, for cases chosen, for each suffix property
+      $inputFolder = $varToFolder[$variable];  
+      //inputs 'fullpathto_case1_suffix1' 'fullpathto_case1_suffix2' 'fullpathto_case2_suffix1' 'fullpathto_case2_suffix2')
+      $executeComponent->exportCasesMultiselects($userDao, $taskDao, $configInputs, $caseFolders, $variable, $suffixes, $inputFolder);
       }
-  */
-  
-    
+
     // specific export for the cases chosen, for each suffix property
     foreach($caseSuffixes as $varName => $suffix)
       {

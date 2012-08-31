@@ -196,9 +196,56 @@ class Rodent_ExecuteComponent extends AppComponent
     }
     
     
+  public function exportCasesMultiselects($userDao, $taskDao, &$configInputs, $caseFolders, $varName, $suffixes, $selectedSubfolderName)
+    {
+    $modelLoad = new MIDAS_ModelLoader();
+    $folderModel = $modelLoad->loadModel('Folder');
+    // in each folder, look for an item matching folder+suffix
+    $itemsForExport = array();
+    // first loop across cases
+    foreach($caseFolders as $folderId)
+      {
+      $folder = $folderModel->load($folderId);
+      $caseName = $folder->getName();
+//TODO some different error checking/exceptions if don't have write access
+//TODO yuck this looking for folder names is brittle, better would be metadata
+      $folders = $folderModel->getChildrenFoldersFiltered($folder, $userDao, MIDAS_POLICY_WRITE);
+      foreach($folders as $folder)
+        {
+        if($folder->getName() === $selectedSubfolderName)
+          {
+          $items = $folderModel->getItemsFiltered($folder, $userDao, MIDAS_POLICY_WRITE);
+          // next loop across suffixes
+          foreach($suffixes as $suffix)
+            {
+            $soughtItem = $caseName . $suffix;
+            foreach($items as $item)
+              {
+              if($item->getName() === $soughtItem)
+                {
+                // at the end of this, want a single variable
+                // that loops across cases then suffixes to look like
+                // inputs 'fullpathto_case1_suffix1' 'fullpathto_case1_suffix2' 'fullpathto_case2_suffix1' 'fullpathto_case2_suffix2')
+                $itemsForExport[$varName][] = $item->getItemId();  
+                }
+              }      
+            }
+          }
+        }
+      }
     
+    $casesToExportPaths = array();
+    foreach($itemsForExport as $varName => $itemIds)
+      {
+      foreach($itemIds as $itemId)
+        {
+        $varToPath = $this->exportSingleBitstreamItemsToWorkDataDir($userDao, $taskDao, array($varName => $itemId));
+        $casesToExportPaths[] = $varToPath[$varName];
+        }
+      }
+    $configInputs[$varName] = $casesToExportPaths;
+    }
     
-
     // specific export for the multiitems chosen
     public function exportMultiitems($userDao, $taskDao, &$configInputs, $multiitems) 
       {
