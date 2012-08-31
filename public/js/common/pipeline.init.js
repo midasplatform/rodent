@@ -64,7 +64,6 @@ midas.rodent.pipeline.onFinishCallback = function()
          }
      });
 
-
      $.each($("."+prefix + "cases_suffix"), function(index, input) {
          requestData[input.id] = input.value;
      });
@@ -80,8 +79,6 @@ midas.rodent.pipeline.onFinishCallback = function()
              requestData[input.id] = input.id;
          }
      });
-     
-     
 
      $.each($(".pipelineparameter"), function(index, input) {
          if(input.type === "checkbox") {
@@ -165,6 +162,10 @@ midas.rodent.pipeline.onShowStepCallback = function(obj)  {
     var processStepId = json.processSteps[step_num]['id'];
     var processStepTitle = json.processSteps[step_num]['title'];
     var processStepDefault = json.processSteps[step_num]['default'];
+  
+    if(step_num == "1") {
+        midas.createNotice("Current output folders will be renamed.", "4000");
+    }
   
     if(processStepType === "cases") {
         var id = prefix + processStepId;

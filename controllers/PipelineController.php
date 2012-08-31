@@ -385,7 +385,13 @@ abstract class Rodent_PipelineController extends Rodent_AppController
         // create a sibling output folder there
         $caseFolder = $folderModel->load($inputParams['casesFolderId']);
         $caseParentId = $caseFolder->getParentId();
-        $outputFolderDao = $folderModel->createFolder($outputFolderStem . '-' . $taskDao->getKey(), '', $caseParentId);
+        
+        // call createOutputFolder if you want to rename the current folder
+        $outputFolderDao = $this->createOutputFolder($userDao, $outputFolderStem, $caseParentId);
+        // otherwise uncomment this below line and comment the above line
+        //$outputFolderDao = $folderModel->createFolder($userDao, $outputFolderStem . '-' . $taskDao->getKey(), '', $caseParentId);
+        
+        
         $configInputs['sibling_outputFolderId'] = $outputFolderDao->getFolderId();
 
         if(array_key_exists("redirect", $outputFolder))
@@ -398,7 +404,10 @@ abstract class Rodent_PipelineController extends Rodent_AppController
         $outputFolderIds = array();
         foreach($configInputs['caseFolderIds'] as $caseFolderId)
           {
-          $outputFolderDao = $folderModel->createFolder($outputFolderStem . '-' . $taskDao->getKey(), '', $caseFolderId);
+          // call createOutputFolder if you want to rename the current folder
+          $outputFolderDao = $this->createOutputFolder($userDao, $outputFolderStem, $caseFolderId);  
+          // otherwise uncomment this below line and comment the above line
+          //$outputFolderDao = $folderModel->createFolder($outputFolderStem . '-' . $taskDao->getKey(), '', $caseFolderId);
           $outputFolderIds[] = $outputFolderDao->getFolderId();
           }
         $configInputs['cases_outputFolderIds'] = $outputFolderIds;  
@@ -417,6 +426,57 @@ abstract class Rodent_PipelineController extends Rodent_AppController
     echo JsonComponent::encode(array('output_folder_id' => $methodOutputFolderId));
     }
   
+  // will take in a stem like 2-Registration, will look for the
+  // current folder named that in the parent folder
+  // then will find the latest count of folders named like 2-Registration-211
+  // will rename the 2-Registration to 2-Registration-212 and create a new
+  // 2-Registration
+  function createOutputFolder($userDao, $outputFolderStem, $parentId)
+    {
+    $modelLoad = new MIDAS_ModelLoader();
+    $folderModel = $modelLoad->loadModel('Folder');
+    
+    // rename most recent folder to oldest
+    $parentFolder = $folderModel->load($parentId);
+    $folders = $folderModel->getChildrenFoldersFiltered($parentFolder, $userDao, MIDAS_POLICY_WRITE);
+    $maxFolderCount = 0;
+    $stemPrefix = $outputFolderStem . "-";
+    $latestFolderId = false;
+    $stemPrefixLen = strlen($stemPrefix);
+    foreach($folders as $folder)
+      {
+      $name = $folder->getName();
+      if($name === $outputFolderStem)
+        {
+        $latestFolderId = $folder->getFolderId();
+        }
+      else
+        {
+        if(strpos($name, $stemPrefix) === 0)
+          {
+          // get the count from the folder name
+          $folderCount = substr($name, $stemPrefixLen);
+          if(((int)$folderCount) > ((int)$maxFolderCount))
+            {
+            $maxFolderCount = $folderCount;  
+            }
+          }
+        }
+      }
+    
+    // rename the last output
+    $maxFolderCount = $maxFolderCount + 1;
+    if($latestFolderId)
+      {
+      $latestOutputFolder = $folderModel->load($latestFolderId);
+      $latestOutputFolder->setName($stemPrefix . $maxFolderCount);
+      $folderModel->save($latestOutputFolder);
+      }
+      
+    // create new output folder
+    $outputFolderDao = $folderModel->createFolder($outputFolderStem, '', $parentFolder);
+    return $outputFolderDao;
+    }
   
   
 
