@@ -77,7 +77,7 @@ midas.rodent.pipeline.onFinishCallback = function()
      
      $.each($("."+prefix + "cases_multicheck_suffix"), function(index, input) {
          if(input.type === "checkbox" && input.checked) {
-             requestData[input.id] = input.value;
+             requestData[input.id] = input.id;
          }
      });
      
